@@ -1,8 +1,9 @@
 import tty
-
-proc kernel_early() {.exportc} =
+import unsigned
+proc kernel_early() {.exportc.} =
   terminalInitialize()
 
 proc kernel_main() {.exportc.} =
-  #terminalInitialize()
   terminalWrite("Hello, world!\n")
+  for i in 0..len("asdf") +  10:
+    terminalPutChar("asdf"[i])

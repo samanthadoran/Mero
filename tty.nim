@@ -13,8 +13,8 @@ proc terminalInitialize*() =
   terminalColor = makeVGAAttribute(LightGrey, Black)
   terminalBuffer = VGAMem
 
-  for y in 0..<VGAHeight:
-    for x in 0..<VGAWidth:
+  for y in 0..VGAHeight-1:
+    for x in 0..VGAWidth-1:
       let index = y * VGAWidth + x
       terminalBuffer[index] = makeVGAEntry(' ', terminalColor)
 
@@ -30,14 +30,14 @@ proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int) =
 proc terminalPutChar*(c: char) =
   #Write a character to the current terminal positio
   terminalPutEntryAt(c, terminalColor, terminalColumn, terminalRow)
-  terminalColumn += 1
+  inc(terminalColumn)
   if terminalColumn == VGAWidth:
     terminalColumn = 0
-    terminalRow += 1
+    inc(terminalRow)
     if terminalRow == VGAHeight:
       terminalRow = 0
 
 proc terminalWrite*(data: string) =
   #Write a string to the terminal
-  for i in 0..<len(data):
+  for i in 0..len(data)-1:
     terminalPutChar(data[i])

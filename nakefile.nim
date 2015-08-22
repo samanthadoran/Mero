@@ -16,14 +16,14 @@ task "clean", "Removes build files.":
 task "build", "Builds the operating system.":
   echo "Compiling..."
   direShell "nim c -d:release --gcc.exe:$1 kernel.nim" % CC
-
+  echo "Assembling..."
   direShell asmC, "boot.s -o boot.o"
   direShell asmC, "crtn.s -o crtn.o"
   direShell asmC, "crti.s -o crti.o"
 
   echo "Linking..."
 
-  direShell CC, "-T linker.ld -o kernel.bin -ffreestanding -O2 -nostdlib boot.o crtn.o crti.o nimcache/kernel.o nimcache/vga.o nimcache/tty.o nimcache/system.o nimcache/unsigned.o"
+  direShell CC, "-T linker.ld -o kernel.bin -ffreestanding -O2 -nostdlib boot.o crtn.o crti.o nimcache/system.o nimcache/unsigned.o nimcache/vga.o nimcache/tty.o nimcache/kernel.o"
 
 task "run", "Runs the operating system using QEMU.":
   if not existsFile("main.bin"): runTask("build")
