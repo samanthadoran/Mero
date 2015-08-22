@@ -15,7 +15,8 @@ task "clean", "Removes build files.":
 
 task "build", "Builds the operating system.":
   echo "Compiling..."
-  direShell "nim c -d:release --gcc.exe:$1 kernel.nim" % CC
+  direShell "nim c -d:release --gcc.exe:$1 kernel" % CC
+
   echo "Assembling..."
   direShell asmC, "boot.s -o boot.o"
   direShell asmC, "crtn.s -o crtn.o"

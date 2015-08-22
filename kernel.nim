@@ -5,5 +5,5 @@ proc kernel_early() {.exportc.} =
 
 proc kernel_main() {.exportc.} =
   terminalWrite("Hello, world!\n")
-  for i in 0..len("asdf") +  10:
+  for i in 0..<len("asdf"):
     terminalPutChar("asdf"[i])

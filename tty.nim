@@ -39,5 +39,6 @@ proc terminalPutChar*(c: char) =
 
 proc terminalWrite*(data: string) =
   #Write a string to the terminal
-  for i in 0..len(data)-1:
+  #for i in 0..len(data)-1:
+  for i in 0 .. <len(data):
     terminalPutChar(data[i])
