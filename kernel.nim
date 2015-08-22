@@ -1,5 +1,8 @@
 import tty
 
-proc kernel_main() {.exportc.} =
+proc kernel_early() {.exportc} =
   terminalInitialize()
+
+proc kernel_main() {.exportc.} =
+  #terminalInitialize()
   terminalWrite("Hello, world!\n")
