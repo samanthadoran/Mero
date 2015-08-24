@@ -1,4 +1,5 @@
 import tty
+import vga
 import unsigned
 
 proc kernel_early() {.exportc.} =
@@ -6,5 +7,7 @@ proc kernel_early() {.exportc.} =
 
 proc kernel_main() {.exportc.} =
   terminalWrite("Hello, world!\n")
-  for i in 0..<len("asdf"):
-    terminalPutChar("asdf"[i])
+  inc(terminalRow)
+  terminalColumn = 0
+  terminalSetColor(makeVGAAttribute(LightGreen, Green))
+  terminalWrite("Testing, 123...\n")
