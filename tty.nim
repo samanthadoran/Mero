@@ -17,14 +17,16 @@ proc terminalInitialize*() =
     for x in 0 .. <VGAWidth:
       let index = y * VGAWidth + x
       terminalBuffer[index] = makeVGAEntry(' ', terminalColor)
-      
+
 proc scrollTerminal*() =
   #Scroll the terminal to give room for additional input
   if terminalRow < 25:
     return
 
-  for i in 0..24*80:
+  for i in 0 .. <24*80:
     terminalBuffer[i] = terminalBuffer[i + 80]
+  for i in 24*80 .. <25*80:
+    terminalBuffer[i] = makeVGAEntry(' ', terminalColor)
 
 proc terminalSetColor*(color: VGAAttribute) =
   #Set the color of foreground and background of the terminal
