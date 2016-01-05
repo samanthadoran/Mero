@@ -17,6 +17,14 @@ proc terminalInitialize*() =
     for x in 0 .. <VGAWidth:
       let index = y * VGAWidth + x
       terminalBuffer[index] = makeVGAEntry(' ', terminalColor)
+      
+proc scrollTerminal*() =
+  #Scroll the terminal to give room for additional input
+  if terminalRow < 25:
+    return
+
+  for i in 0..24*80:
+    terminalBuffer[i] = terminalBuffer[i + 80]
 
 proc terminalSetColor*(color: VGAAttribute) =
   #Set the color of foreground and background of the terminal
@@ -28,14 +36,19 @@ proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int) =
   terminalBuffer[index] = makeVGAEntry(c, color)
 
 proc terminalPutChar*(c: char) =
-  #Write a character to the current terminal positio
-  terminalPutEntryAt(c, terminalColor, terminalColumn, terminalRow)
-  inc(terminalColumn)
-  if terminalColumn == VGAWidth:
+  #Write a character to the current terminal position
+
+  if ord(c) == 10:
     terminalColumn = 0
     inc(terminalRow)
-    if terminalRow == VGAHeight:
-      terminalRow = 0
+  else:
+    terminalPutEntryAt(c, terminalColor, terminalColumn, terminalRow)
+    inc(terminalColumn)
+    if terminalColumn == VGAWidth:
+      terminalColumn = 0
+      inc(terminalRow)
+
+  scrollTerminal()
 
 proc terminalWrite*(data: string) =
   #Write a string to the terminal
