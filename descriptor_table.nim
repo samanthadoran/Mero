@@ -19,8 +19,10 @@ var gdt_ptr: gdt_ptr_t
 
 var gdt_entries: array[0 .. 5, gdt_entry]
 
-proc gdt_flush(address: uint32) =
-  discard
+#Forgive me for this, I just couldn't figure it out
+{.emit: """
+extern void gdt_flush(u32int);
+"""}
 
 proc gdt_set_gate(num: int32, base: uint32, limit: uint32, access: uint8, gran: uint8) =
   gdt_entries[num].base_low = (base and 0xFFFF)
@@ -42,7 +44,10 @@ proc init_gdt() =
   gdt_set_gate(3, 0, cast[uint32](0xFFFFFFFF), 0xFA, 0xCF) # User mode code segment
   gdt_set_gate(4, 0, cast[uint32](0xFFFFFFFF), 0xF2, 0xCF) # User mode data segments))
 
-  gdt_flush(cast[uint32](addr(gdt_ptr)))
+  #I wishI could have found a more elegant solution than this kludge
+  {.emit: """
+  gdt_flush(&`gdt_ptr`);
+  """}
 
 proc init_descriptor_tables() =
   init_gdt()
