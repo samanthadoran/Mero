@@ -8,10 +8,10 @@ type
     base_high*: uint8
   idt_entry* = object {.packed.}
     base_low*: uint16
-    sel: uint16
-    always0: uint8
-    flags: uint8
-    base_hi: uint8
+    sel*: uint16
+    always0*: uint8
+    flags*: uint8
+    base_high*: uint8
 
   gdt* = object {.packed.}
     limit*: uint16
@@ -28,6 +28,7 @@ var gdt_ptr: gdt_ptr_t
 var idt_ptr: idt_ptr_t
 
 var gdt_entries: array[0 .. 5, gdt_entry]
+var idt_entries: array[0 .. 255, idt_entry]
 
 #Forgive me for this, I just couldn't figure it out
 {.emit: """
@@ -65,113 +66,119 @@ extern void isr30();
 extern void isr31();
 
 extern void gdt_flush(u32int);
+extern void idt_flush(u32int);
 """}
 
-proc probe_isr(isr: int) =
+proc getISR(isr: int): uint32 =
   {.emit: """
   switch(`isr`) {
     case 0:
-      isr0();
+      return (u32int)isr0;
       break;
     case 1:
-      isr1();
+      return (u32int)isr1;
       break;
     case 2:
-      isr2();
+      return (u32int)isr2;
       break;
     case 3:
-      isr3();
+      return (u32int)isr3;
       break;
     case 4:
-      isr4();
+      return (u32int)isr4;
       break;
     case 5:
-      isr5();
+      return (u32int)isr5;
       break;
     case 6:
-      isr6();
+      return (u32int)isr6;
       break;
     case 7:
-      isr7();
+      return (u32int)isr7;
       break;
     case 8:
-      isr8();
+      return (u32int)isr8;
       break;
     case 9:
-      isr9();
+      return (u32int)isr9;
       break;
     case 10:
-      isr10();
+      return (u32int)isr10;
       break;
     case 11:
-      isr11();
+      return (u32int)isr11;
       break;
     case 12:
-      isr12();
+      return (u32int)isr12;
       break;
     case 13:
-      isr13();
+      return (u32int)isr13;
       break;
     case 14:
-      isr14();
+      return (u32int)isr14;
       break;
     case 15:
-      isr15();
+      return (u32int)isr15;
       break;
     case 16:
-      isr16();
+      return (u32int)isr16;
       break;
     case 17:
-      isr17();
+      return (u32int)isr17;
       break;
     case 18:
-      isr18();
+      return (u32int)isr18;
       break;
     case 19:
-      isr19();
+      return (u32int)isr19;
       break;
     case 20:
-      isr20();
+      return (u32int)isr20;
       break;
     case 21:
-      isr22();
+      return (u32int)isr22;
       break;
     case 22:
-      isr22();
+      return (u32int)isr22;
       break;
     case 23:
-      isr23();
+      return (u32int)isr23;
       break;
     case 24:
-      isr24();
+      return (u32int)isr24;
       break;
     case 25:
-      isr25();
+      return (u32int)isr25;
       break;
     case 26:
-      isr26();
+      return (u32int)isr26;
       break;
     case 27:
-      isr27();
+      return (u32int)isr27;
       break;
     case 28:
-      isr28();
+      return (u32int)isr28;
       break;
     case 29:
-      isr29();
+      return (u32int)isr29;
       break;
     case 30:
-      isr30();
+      return (u32int)isr30;
       break;
     case 31:
-      isr31();
+      return (u32int)isr31;
       break;
   }
   """}
 
 proc gdt_flush(gdt_ptr: gdt_ptr_t) =
   {.emit: """
-  gdt_flush(&`gdt_ptr`)
+  gdt_flush(&(u32int)`gdt_ptr`)
+  """}
+
+proc idt_flush(idt_ptr: idt_ptr_t) =
+  {.emit: """
+  idt_flush(&(u32int)`gdt_ptr`)
   """}
 
 proc gdt_set_gate(num: int32, base: uint32, limit: uint32, access: uint8, gran: uint8) =
@@ -184,6 +191,33 @@ proc gdt_set_gate(num: int32, base: uint32, limit: uint32, access: uint8, gran: 
 
   gdt_entries[num].granularity = (gdt_entries[num].granularity) or (gran and 0xF0)
   gdt_entries[num].access = access
+
+proc idt_set_gate(num: uint8, base: uint32, sel: uint16, flags: uint8) =
+  idt_entries[num].base_low = (base and 0xFFFF)
+  idt_entries[num].base_high = cast[uint8]((base shr 16) and 0xFFFF)
+
+  idt_entries[num].sel = sel
+  idt_entries[num].always0 = 0
+
+  #An or will be added here when going to user mode
+  idt_entries[num].flags = flags
+
+proc init_idit() =
+  idt_ptr.limit = cast[uint16](sizeof(idt_entry) * 256) - 1
+  idt_ptr.base = cast[uint32](addr(idt_entries))
+
+  #A lack of memset makes me sad.
+  for i in 0 .. < len(idt_entries):
+    idt_entries[i].base_low = 0
+    idt_entries[i].sel = 0
+    idt_entries[i].always0 = 0
+    idt_entries[i].flags = 0
+    idt_entries[i].base_high = 0
+
+  for i in 0..31:
+    idt_set_gate(cast[uint8](i), getISR(i) , cast[uint16](0x08), cast[uint8](0x8E))
+
+  idt_flush(idt_ptr)
 
 proc init_gdt() =
   gdt_ptr.limit = cast[uint16](sizeof(gdt_entry) * 5) - 1
@@ -202,4 +236,4 @@ proc init_idt() =
 
 proc init_descriptor_tables() =
   init_gdt()
-  #init_idt()
+  init_idt()
