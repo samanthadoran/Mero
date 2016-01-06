@@ -1,6 +1,5 @@
 import tty
 import vga
-import unsigned
 
 proc kernel_early() {.exportc.} =
   terminalInitialize()

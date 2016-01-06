@@ -1,5 +1,3 @@
-import unsigned
-
 type
   #VGA data helpers
   VidMem*   = ptr array[0..65_000, VGAEntry]
