@@ -11,7 +11,7 @@ type
     sel*: uint16
     always0*: uint8
     flags*: uint8
-    base_high*: uint8
+    base_high*: uint16
 
   gdt* = object {.packed.}
     limit*: uint16
@@ -210,23 +210,24 @@ proc idt_set_gate(num: uint8, base: uint32, sel: uint16, flags: uint8) =
   idt_entries[num].flags = flags
 
 proc init_idt() =
-  idt_ptr.limit = cast[uint16](sizeof(idt_entry) * 256) - 1
+  #cast[uint16](cast[uint16](sizeof(gdt_entry)) * cast[uint16](5) - cast[uint16](1))
+  idt_ptr.limit = cast[uint16](cast[uint16](cast[uint16](sizeof(idt_entry)) * cast[uint16](256)) - cast[uint16](1))
   idt_ptr.base = cast[uint32](addr(idt_entries))
 
   #A lack of memset makes me sad.
   for i in 0 .. < len(idt_entries):
-    idt_entries[i].base_low = 0
-    idt_entries[i].sel = 0
-    idt_entries[i].always0 = 0
-    idt_entries[i].flags = 0
-    idt_entries[i].base_high = 0
+    idt_entries[i].base_low = cast[uint16](0)
+    idt_entries[i].sel = cast[uint16](0)
+    idt_entries[i].always0 = cast[uint8](0)
+    idt_entries[i].flags = cast[uint8](0)
+    idt_entries[i].base_high = cast[uint16](0)
 
   for i in 0..31:
     idt_set_gate(cast[uint8](i), getISR(i) , cast[uint16](0x08), cast[uint8](0x8E))
 
   #idt_flush(idt_ptr)
   {.emit: """
-  gdt_flush(`idt_ptr`);
+  idt_flush(`idt_ptr`);
   """}
 
 

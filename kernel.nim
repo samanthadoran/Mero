@@ -15,6 +15,6 @@ proc kernel_main() {.exportc.} =
   for i in 0..21:
     terminalWrite("Recurse Center: Never Graduate!\n")
 
-  #asm """
-  #int $0x3
-  #"""
+  asm """
+  int $0x3
+  """
