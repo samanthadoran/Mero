@@ -1,9 +1,13 @@
 import vga
+
 #Using globals until get alloc working
 var terminalRow*: int
 var terminalColumn*: int
 var terminalColor*: VGAAttribute
 var terminalBuffer*: VidMem
+
+proc terminalWrite*(data: string)
+proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int)
 
 proc terminalInitialize*() =
   #Initialize the terminal
@@ -25,7 +29,7 @@ proc scrollTerminal*() =
   for i in 0 .. <24*80:
     terminalBuffer[i] = terminalBuffer[i + 80]
   for i in 24*80 .. <25*80:
-    terminalBuffer[i] = makeVGAEntry(' ', terminalColor)
+    terminalPutEntryAt(' ', i - 24*80, 24)
 
 proc terminalSetColor*(color: VGAAttribute) =
   #Set the color of foreground and background of the terminal
@@ -38,7 +42,6 @@ proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int) =
 
 proc terminalPutChar*(c: char) =
   #Write a character to the current terminal position
-
   if ord(c) == 10:
     terminalColumn = 0
     inc(terminalRow)

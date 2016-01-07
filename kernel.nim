@@ -12,7 +12,9 @@ proc kernel_main() {.exportc.} =
   terminalColumn = 0
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
   terminalWrite("Testing, 123...\n")
+
+  init_descriptor_tables()
+
   asm """
   int $0x3
-  int $0x4
   """
