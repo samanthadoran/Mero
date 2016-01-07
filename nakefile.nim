@@ -16,18 +16,32 @@ task "clean", "Removes build files.":
 task "build", "Builds the operating system.":
   echo "Compiling..."
   direShell "nim c -d:release --gcc.exe:$1 kernel" % CC
+  #direShell "nim c -d:release --gcc.exe:$1 isr" % CC
 
   echo "Assembling..."
   direShell asmC, "boot.s -o boot.o"
-  direShell asmC, "crtn.s -o crtn.o"
-  direShell asmC, "crti.s -o crti.o"
-  direShell asmC, "gdt.s -o gdt.o"
-  direShell asmC, "iterrupt.s -o interrupt.o"
+  #direShell asmC, "crtn.s -o crtn.o"
+  #direShell asmC, "crti.s -o crti.o"
+  direShell "nasm -felf32 gdt.s -o gdt.o"
+  direShell "nasm -felf32 interrupt.s -o interrupt.o"
 
   echo "Linking..."
 
-  direShell CC, "-T linker.ld -o kernel.bin -ffreestanding -O2 -nostdlib boot.o crtn.o crti.o nimcache/system.o nimcache/unsigned.o nimcache/vga.o nimcache/tty.o nimcache/kernel.o"
+  direShell CC, "-T linker.ld -o kernel.bin -ffreestanding -O2 -nostdlib *.o nimcache/*.o"
 
-task "run", "Runs the operating system using QEMU.":
+task "run-qemu", "Runs the operating system using QEMU.":
   if not existsFile("main.bin"): runTask("build")
   direShell "qemu-system-i386 -kernel kernel.bin"
+
+task "run-bochs", "Runs the operating system using bochs.":
+  echo("Updating image...")
+  direShell "sudo losetup /dev/loop99 floppy.img"
+  direShell "sudo mount /dev/loop99 /mnt"
+  direShell "sudo cp kernel.bin /mnt/kernel"
+  direShell "sudo umount /dev/loop99"
+  direShell "sudo losetup -d /dev/loop99"
+
+  echo("Running bochs...")
+  direShell "sudo /sbin/losetup /dev/loop99 floppy.img"
+  direShell "sudo bochs -f bochsrc.txt"
+  direShell "sudo /sbin/losetup -d /dev/loop99"

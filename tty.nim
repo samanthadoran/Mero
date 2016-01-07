@@ -1,5 +1,4 @@
 import vga
-
 #Using globals until get alloc working
 var terminalRow*: int
 var terminalColumn*: int

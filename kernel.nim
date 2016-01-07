@@ -1,5 +1,7 @@
 import tty
 import vga
+import descriptor_tables
+import isr
 
 proc kernel_early() {.exportc.} =
   terminalInitialize()
@@ -10,3 +12,7 @@ proc kernel_main() {.exportc.} =
   terminalColumn = 0
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
   terminalWrite("Testing, 123...\n")
+  asm """
+  int $0x3
+  int $0x4
+  """
