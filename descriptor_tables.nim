@@ -32,6 +32,12 @@ var idt_entries: array[0 .. 255, idt_entry]
 
 #Forgive me for this, I just couldn't figure it out
 {.emit: """
+typedef unsigned int   u32int;
+typedef          int   s32int;
+typedef unsigned short u16int;
+typedef          short s16int;
+typedef unsigned char  u8int;
+typedef          char  s8int;
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -171,14 +177,15 @@ proc getISR(isr: int): uint32 =
   }
   """}
 
+
 proc gdt_flush(gdt_ptr: gdt_ptr_t) =
   {.emit: """
-  gdt_flush(&(u32int)`gdt_ptr`)
+  gdt_flush((u32int)&`gdt_ptr`);
   """}
 
 proc idt_flush(idt_ptr: idt_ptr_t) =
   {.emit: """
-  idt_flush(&(u32int)`gdt_ptr`)
+  idt_flush((u32int)&`idt_ptr`);
   """}
 
 proc gdt_set_gate(num: int32, base: uint32, limit: uint32, access: uint8, gran: uint8) =
@@ -202,7 +209,7 @@ proc idt_set_gate(num: uint8, base: uint32, sel: uint16, flags: uint8) =
   #An or will be added here when going to user mode
   idt_entries[num].flags = flags
 
-proc init_idit() =
+proc init_idt() =
   idt_ptr.limit = cast[uint16](sizeof(idt_entry) * 256) - 1
   idt_ptr.base = cast[uint32](addr(idt_entries))
 
@@ -228,12 +235,9 @@ proc init_gdt() =
   gdt_set_gate(3, 0, cast[uint32](0xFFFFFFFF), 0xFA, 0xCF) # User mode code segment
   gdt_set_gate(4, 0, cast[uint32](0xFFFFFFFF), 0xF2, 0xCF) # User mode data segments))
 
-  #I wishI could have found a more elegant solution than this kludge
+  #I wish I could have found a more elegant solution than this kludge
   gdt_flush(gdt_ptr)
 
-proc init_idt() =
-  discard
-
-proc init_descriptor_tables() =
+proc init_descriptor_tables*() =
   init_gdt()
   init_idt()
