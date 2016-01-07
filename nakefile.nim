@@ -4,8 +4,8 @@ import os
 #Thank yout to https://github.com/dom96/nimkernel for the example of how to set this up!
 
 const
-  CC = "/home/samantha/crossCompiler/build/bin/i686-elf-gcc"
-  asmC = "/home/samantha/crossCompiler/build/bin/i686-elf-as"
+  CC = "i686-elf-gcc"
+  asmC = "i686-elf-as"
 
 task "clean", "Removes build files.":
   removeFile("boot.o")
