@@ -29,7 +29,7 @@ proc scrollTerminal*() =
   for i in 0 .. <24*80:
     terminalBuffer[i] = terminalBuffer[i + 80]
   for i in 24*80 .. <25*80:
-    terminalPutEntryAt(' ', i - 24*80, 24)
+    terminalPutEntryAt(' ', terminalColor, i - 24*80, 24)
 
 proc terminalSetColor*(color: VGAAttribute) =
   #Set the color of foreground and background of the terminal
