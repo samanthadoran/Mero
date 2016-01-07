@@ -21,6 +21,8 @@ task "build", "Builds the operating system.":
   direShell asmC, "boot.s -o boot.o"
   direShell asmC, "crtn.s -o crtn.o"
   direShell asmC, "crti.s -o crti.o"
+  direShell asmC, "gdt.s -o gdt.o"
+  direShell asmC, "iterrupt.s -o interrupt.o"
 
   echo "Linking..."
 
