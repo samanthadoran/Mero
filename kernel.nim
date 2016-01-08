@@ -11,6 +11,9 @@ proc kernel_main() {.exportc.} =
   terminalWrite("Hello, world!\n")
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
   terminalWrite("Testing, 123...\n")
+  terminalWrite("Testing decimal writing with 8675309: ")
+  terminalWriteDecimal(8675309)
+  terminalWrite("\n")
   terminalSetColor(makeVGAAttribute(Green, Black))
 
   #Test multiple interrupts

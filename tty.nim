@@ -68,3 +68,40 @@ proc terminalWrite*(data: string) =
   #Write a string to the terminal
   for i in 0 .. <len(data):
     terminalPutChar(data[i])
+
+proc terminalWriteDecimal*(num: int) =
+  #Properly add a negative for less than zero
+  if num < 0:
+    terminalPutChar('-')
+  if num == 0:
+    terminalPutChar('0')
+    return
+
+  discard """
+  Nim likes to replace array[0..n, char] with a cstring.. this won't do as we
+  cannot include <string.h>. So, while reversing the string using arrays would
+  have worked, using a similar method of swapping the terminal buffer entries
+  will work just as well
+  """
+  let cursorStart = terminalColumn
+  var lengthNumber = 0
+
+  var numCopy = num
+  while numCopy != 0:
+    #Add the number to the ascii code for 0
+    terminalPutChar(chr(48 + (numCopy mod 10)))
+    #Lose the rightmost digit
+    numCopy = numCopy div 10
+
+    inc(lengthNumber)
+
+  var i = 0
+  while i <= lengthNumber div 2:
+    #Swap in memory
+    let first = terminalBuffer[terminalRow*VGAWidth + cursorStart + i]
+    let last = terminalBuffer[terminalRow*VGAWidth + cursorStart + lengthNumber - i]
+
+    terminalBuffer[terminalRow*VGAWidth + cursorStart + i] = last
+    terminalBuffer[terminalRow*VGAWidth + cursorStart +lengthNumber - i] = first
+
+    inc(i)

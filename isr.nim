@@ -21,7 +21,11 @@ type
 var i: int = 0
 proc isr_handler (regs: registers) {.exportc.} =
   if i mod 2 == 0:
-    terminalWrite("received interrupt: even...\n")
+    terminalWrite("received interrupt: ")
+    terminalWriteDecimal(cast[int](regs.int_no))
+    terminalWrite("\n")
   else:
-    terminalWrite("received interrupt: odd...\n")
+    terminalWrite("received interrupt: ")
+    terminalWriteDecimal(cast[int](regs.int_no))
+    terminalWrite("\n")
   inc(i)
