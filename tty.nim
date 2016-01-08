@@ -23,13 +23,23 @@ proc terminalInitialize*() =
 
 proc scrollTerminal*() =
   #Scroll the terminal to give room for additional input
-  if terminalRow < 25:
+
+  #Don't scroll until we need to
+  if terminalRow < VGAHeight:
     return
 
-  for i in 0 .. <24*80:
-    terminalBuffer[i] = terminalBuffer[i + 80]
-  for i in 24*80 .. <25*80:
-    terminalPutEntryAt(' ', terminalColor, i - 24*80, 24)
+  #Imagine the screen buffer as a 2d grid for clarity
+  for y in 0 .. <VGAHeight - 1:
+    for x in 0 .. <VGAWidth:
+      terminalBuffer[y * VGAWidth + x] = terminalBuffer[(y + 1) * VGAWidth + x]
+
+  #Clear the last line
+  for i in 0 .. <VGAWidth:
+    terminalPutEntryAt(' ', terminalColor, i, VGAHeight - 1)
+
+  #Reset cursor position
+  terminalRow = VGAHeight - 1
+  terminalColumn = 0
 
 proc terminalSetColor*(color: VGAAttribute) =
   #Set the color of foreground and background of the terminal
