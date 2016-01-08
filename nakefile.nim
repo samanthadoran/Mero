@@ -9,29 +9,32 @@ const
 
 task "clean", "Removes build files.":
   removeFile("boot.o")
-  removeFile("kernel.bin")
+  removeFile("gdt.o")
+  removeFile("crti.o")
+  removeFile("crtn.o")
+  removeFile("interrupt.o")
+  removeFile("mero.bin")
   removeDir("nimcache")
   echo "Done."
 
 task "build", "Builds the operating system.":
   echo "Compiling..."
   direShell "nim c -d:release --gcc.exe:$1 kernel" % CC
-  #direShell "nim c -d:release --gcc.exe:$1 isr" % CC
 
   echo "Assembling..."
   direShell asmC, "boot.s -o boot.o"
-  #direShell asmC, "crtn.s -o crtn.o"
-  #direShell asmC, "crti.s -o crti.o"
+  direShell asmC, "crtn.s -o crtn.o"
+  direShell asmC, "crti.s -o crti.o"
   direShell "nasm -felf32 gdt.s -o gdt.o"
   direShell "nasm -felf32 interrupt.s -o interrupt.o"
 
   echo "Linking..."
 
-  direShell CC, "-T linker.ld -o kernel.bin -ffreestanding -O2 -nostdlib *.o nimcache/*.o"
+  direShell CC, "-T linker.ld -o mero.bin -ffreestanding -O2 -nostdlib *.o nimcache/*.o"
 
 task "run-qemu", "Runs the operating system using QEMU.":
   if not existsFile("main.bin"): runTask("build")
-  direShell "qemu-system-i386 -kernel kernel.bin"
+  direShell "qemu-system-i386 -kernel mero.bin"
 
 task "run-bochs", "Runs the operating system using bochs.":
   echo("Updating image...")
