@@ -14,23 +14,23 @@ task "clean", "Removes build files.":
   removeFile("crtn.o")
   removeFile("interrupt.o")
   removeFile("mero.bin")
-  removeDir("nimcache")
+  removeDir("source/nimcache")
   echo "Done."
 
 task "build", "Builds the operating system.":
   echo "Compiling..."
-  direShell "nim c -d:release --gcc.exe:$1 kernel" % CC
+  direShell "nim c -d:release --gcc.exe:$1 source/kernel" % CC
 
   echo "Assembling..."
-  direShell asmC, "boot.s -o boot.o"
-  direShell asmC, "crtn.s -o crtn.o"
-  direShell asmC, "crti.s -o crti.o"
-  direShell "nasm -felf32 gdt.s -o gdt.o"
-  direShell "nasm -felf32 interrupt.s -o interrupt.o"
+  direShell asmC, "i686-asm/boot.s -o boot.o"
+  direShell asmC, "i686-asm/crtn.s -o crtn.o"
+  direShell asmC, "i686-asm/crti.s -o crti.o"
+  direShell "nasm -felf32 i686-asm/gdt.s -o gdt.o"
+  direShell "nasm -felf32 i686-asm/interrupt.s -o interrupt.o"
 
   echo "Linking..."
 
-  direShell CC, "-T linker.ld -o mero.bin -ffreestanding -O2 -nostdlib *.o nimcache/*.o"
+  direShell CC, "-T linker.ld -o mero.bin -ffreestanding -O2 -nostdlib *.o source/nimcache/*.o"
 
 task "run-qemu", "Runs the operating system using QEMU.":
   if not existsFile("main.bin"): runTask("build")
