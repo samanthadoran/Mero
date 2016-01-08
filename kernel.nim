@@ -12,9 +12,12 @@ proc kernel_main() {.exportc.} =
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
   terminalWrite("Testing, 123...\n")
   terminalSetColor(makeVGAAttribute(Green, Black))
-  for i in 0..21:
-    terminalWrite("Recurse Center: Never Graduate!\n")
 
+  #Test multiple interrupts
   asm """
   int $0x3
+  int $0x4
   """
+
+  #Did we properly return from interrupts
+  terminalWrite("Recurse Center: Never Graduate!\n")

@@ -6,6 +6,7 @@ type
     access*: uint8
     granularity*: uint8
     base_high*: uint8
+
   idt_entry* = object {.packed.}
     base_low*: uint16
     sel*: uint16
@@ -38,6 +39,7 @@ typedef unsigned short u16int;
 typedef          short s16int;
 typedef unsigned char  u8int;
 typedef          char  s8int;
+
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -76,116 +78,88 @@ extern void idt_flush(u32int);
 """}
 
 proc getISR(isr: int): uint32 =
+  #Wrapper function to get  a handle to isr function
+  #TODO: make a type for the pointer instead of returning uint32
   {.emit: """
   switch(`isr`) {
     case 0:
       return (u32int)isr0;
-      break;
     case 1:
       return (u32int)isr1;
-      break;
     case 2:
       return (u32int)isr2;
-      break;
     case 3:
       return (u32int)isr3;
-      break;
     case 4:
       return (u32int)isr4;
-      break;
     case 5:
       return (u32int)isr5;
-      break;
     case 6:
       return (u32int)isr6;
-      break;
     case 7:
       return (u32int)isr7;
-      break;
     case 8:
       return (u32int)isr8;
-      break;
     case 9:
       return (u32int)isr9;
-      break;
     case 10:
       return (u32int)isr10;
-      break;
     case 11:
       return (u32int)isr11;
-      break;
     case 12:
       return (u32int)isr12;
-      break;
     case 13:
       return (u32int)isr13;
-      break;
     case 14:
       return (u32int)isr14;
-      break;
     case 15:
       return (u32int)isr15;
-      break;
     case 16:
       return (u32int)isr16;
-      break;
     case 17:
       return (u32int)isr17;
-      break;
     case 18:
       return (u32int)isr18;
-      break;
     case 19:
       return (u32int)isr19;
-      break;
     case 20:
       return (u32int)isr20;
-      break;
     case 21:
       return (u32int)isr22;
-      break;
     case 22:
       return (u32int)isr22;
-      break;
     case 23:
       return (u32int)isr23;
-      break;
     case 24:
       return (u32int)isr24;
-      break;
     case 25:
       return (u32int)isr25;
-      break;
     case 26:
       return (u32int)isr26;
-      break;
     case 27:
       return (u32int)isr27;
-      break;
     case 28:
       return (u32int)isr28;
-      break;
     case 29:
       return (u32int)isr29;
-      break;
     case 30:
       return (u32int)isr30;
-      break;
     case 31:
       return (u32int)isr31;
-      break;
   }
   """}
 
 
 proc gdt_flush(gdt_ptr: gdt_ptr_t) =
+  #Wrap the ugly C function
   {.emit: """
-  gdt_flush((u32int)(&(`gdt_ptr`)));
+  gdt_flush(`gdt_ptr`);
   """}
 
 proc idt_flush(idt_ptr: idt_ptr_t) =
+  #Wrap the ugly C function
   {.emit: """
-  idt_flush((u32int)&`idt_ptr`);
+  idt_flush(`idt_ptr`);
   """}
 
 proc gdt_set_gate(num: int32, base: uint32, limit: uint32, access: uint8, gran: uint8) =
@@ -194,9 +168,10 @@ proc gdt_set_gate(num: int32, base: uint32, limit: uint32, access: uint8, gran: 
   gdt_entries[num].base_high = (base shr 24) and 0xFF
 
   gdt_entries[num].limit_low = limit and 0xFFFF
-  gdt_entries[num].granularity = (limit shr 16) and 0x0F
 
+  gdt_entries[num].granularity = (limit shr 16) and 0x0F
   gdt_entries[num].granularity = (gdt_entries[num].granularity) or (gran and 0xF0)
+
   gdt_entries[num].access = access
 
 proc idt_set_gate(num: uint8, base: uint32, sel: uint16, flags: uint8) =
@@ -210,8 +185,7 @@ proc idt_set_gate(num: uint8, base: uint32, sel: uint16, flags: uint8) =
   idt_entries[num].flags = flags
 
 proc init_idt() =
-  #cast[uint16](cast[uint16](sizeof(gdt_entry)) * cast[uint16](5) - cast[uint16](1))
-  idt_ptr.limit = cast[uint16](cast[uint16](cast[uint16](sizeof(idt_entry)) * cast[uint16](256)) - cast[uint16](1))
+  idt_ptr.limit = cast[uint16](sizeof(idt_entry) * 256 - 1)
   idt_ptr.base = cast[uint32](addr(idt_entries))
 
   #A lack of memset makes me sad.
@@ -223,19 +197,14 @@ proc init_idt() =
     idt_entries[i].base_high = cast[uint16](0)
 
   for i in 0..31:
-    idt_set_gate(cast[uint8](i), getISR(i) , cast[uint16](0x08), cast[uint8](0x8E))
+    idt_set_gate(cast[uint8](i), getISR(i), cast[uint16](0x08), cast[uint8](0x8E))
 
-  #idt_flush(idt_ptr)
-  {.emit: """
-  idt_flush(`idt_ptr`);
-  """}
+  idt_flush(idt_ptr)
 
 
 proc init_gdt() =
-
-  gdt_ptr.limit = cast[uint16](cast[uint16](sizeof(gdt_entry)) * cast[uint16](5) - cast[uint16](1))
+  gdt_ptr.limit = cast[uint16](sizeof(gdt_entry) * 5 - 1)
   gdt_ptr.base = cast[uint32](addr(gdt_entries))
-
 
   gdt_set_gate(0, 0, cast[uint32](0), cast[uint8](0), cast[uint8](0))                # Null segment
   gdt_set_gate(1, 0, cast[uint32](0xFFFFFFFF), cast[uint8](0x9A), cast[uint8](0xCF)) # Code segment
@@ -243,13 +212,10 @@ proc init_gdt() =
   gdt_set_gate(3, 0, cast[uint32](0xFFFFFFFF), cast[uint8](0xFA), cast[uint8](0xCF)) # User mode code segment
   gdt_set_gate(4, 0, cast[uint32](0xFFFFFFFF), cast[uint8](0xF2), cast[uint8](0xCF)) # User mode data segments))
 
-  #I wish I could have found a more elegant solution than this kludge
-  #gdt_flush(gdt_ptr)
-  {.emit: """
-  gdt_flush(`gdt_ptr`);
-  """}
+  gdt_flush(gdt_ptr)
 
 proc init_descriptor_tables*() =
+  #Don't leave interrupts running while doing this!
   asm """
   cli
   """
@@ -257,6 +223,7 @@ proc init_descriptor_tables*() =
   init_gdt()
   init_idt()
 
+  #Don't forget to restart interrupts
   asm """
   sti
   """

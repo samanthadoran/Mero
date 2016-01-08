@@ -18,6 +18,10 @@ type
     eflags*: uint32
     useresp*: uint32
     ss*: uint32
-
+var i: int = 0
 proc isr_handler (regs: registers) {.exportc.} =
-  terminalWrite("received inerrupt: int to string not implemented...")
+  if i mod 2 == 0:
+    terminalWrite("received interrupt: even...\n")
+  else:
+    terminalWrite("received interrupt: odd...\n")
+  inc(i)
