@@ -15,6 +15,7 @@ task "clean", "Removes build files.":
   removeFile("interrupt.o")
   removeFile("mero.bin")
   removeDir("source/nimcache")
+  removeDir("nimcache")
   echo "Done."
 
 task "build", "Builds the operating system.":
@@ -33,7 +34,7 @@ task "build", "Builds the operating system.":
   direShell CC, "-T linker.ld -o mero.bin -ffreestanding -O2 -nostdlib *.o source/nimcache/*.o"
 
 task "run-qemu", "Runs the operating system using QEMU.":
-  if not existsFile("main.bin"): runTask("build")
+  if not existsFile("mero.bin"): runTask("build")
   direShell "qemu-system-i386 -kernel mero.bin"
 
 task "run-bochs", "Runs the operating system using bochs.":

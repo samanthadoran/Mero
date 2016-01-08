@@ -1,7 +1,8 @@
 import tty
 import vga
+
 type
-  registers* = object
+  registers* = object {.packed.}
     ds*: uint32
     edi*: uint32
     esi*: uint32
@@ -18,14 +19,17 @@ type
     eflags*: uint32
     useresp*: uint32
     ss*: uint32
+
 var i: int = 0
+
+#TODO: This doesn't always work, sometimes it seems to be repeatedly called
 proc isr_handler (regs: registers) {.exportc.} =
   if i mod 2 == 0:
-    terminalWrite("received interrupt: ")
-    terminalWriteDecimal(cast[int](regs.int_no))
+    terminalWrite("Received interrupt: ")
+    terminalWriteDecimal((regs.int_no))
     terminalWrite("\n")
   else:
-    terminalWrite("received interrupt: ")
-    terminalWriteDecimal(cast[int](regs.int_no))
+    terminalWrite("Received interrupt: ")
+    terminalWriteDecimal((regs.int_no))
     terminalWrite("\n")
   inc(i)

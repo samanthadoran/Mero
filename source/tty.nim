@@ -69,6 +69,41 @@ proc terminalWrite*(data: string) =
   for i in 0 .. <len(data):
     terminalPutChar(data[i])
 
+proc terminalWriteDecimal*(num: uint) =
+  #Properly add a negative for less than zero
+  if num < 0:
+    terminalPutChar('-')
+  if num == 0:
+    terminalPutChar('0')
+    return
+
+  discard """
+  Nim likes to replace array[0..n, char] with a cstring.. this won't do as we
+  cannot include <string.h>. So, while reversing the string using arrays would
+  have worked, using a similar method of swapping the terminal buffer entries
+  will work just as well
+  """
+
+  let cursorStart = terminalColumn
+  var endNumIndex = -1
+
+  var numCopy = num
+  while numCopy != 0:
+    #Add the number to the ascii code for 0
+    terminalPutChar(chr(cast[uint](48) + (numCopy mod 10)))
+    #Lose the rightmost digit
+    numCopy = numCopy div 10
+
+    inc(endNumIndex)
+
+  for i in 0..endNumIndex div 2:
+    #Swap in memory
+    let first = terminalBuffer[terminalRow*VGAWidth + cursorStart + i]
+    let last = terminalBuffer[terminalRow*VGAWidth + cursorStart + endNumIndex - i]
+
+    terminalBuffer[terminalRow*VGAWidth + cursorStart + i] = last
+    terminalBuffer[terminalRow*VGAWidth + cursorStart + endNumIndex - i] = first
+
 proc terminalWriteDecimal*(num: int) =
   #Properly add a negative for less than zero
   if num < 0:
@@ -83,8 +118,9 @@ proc terminalWriteDecimal*(num: int) =
   have worked, using a similar method of swapping the terminal buffer entries
   will work just as well
   """
+
   let cursorStart = terminalColumn
-  var lengthNumber = 0
+  var endNumIndex = -1
 
   var numCopy = num
   while numCopy != 0:
@@ -93,15 +129,48 @@ proc terminalWriteDecimal*(num: int) =
     #Lose the rightmost digit
     numCopy = numCopy div 10
 
-    inc(lengthNumber)
+    inc(endNumIndex)
 
-  var i = 0
-  while i <= lengthNumber div 2:
+  for i in 0..endNumIndex div 2:
     #Swap in memory
     let first = terminalBuffer[terminalRow*VGAWidth + cursorStart + i]
-    let last = terminalBuffer[terminalRow*VGAWidth + cursorStart + lengthNumber - i]
+    let last  = terminalBuffer[terminalRow*VGAWidth + cursorStart + endNumIndex - i]
 
     terminalBuffer[terminalRow*VGAWidth + cursorStart + i] = last
-    terminalBuffer[terminalRow*VGAWidth + cursorStart +lengthNumber - i] = first
+    terminalBuffer[terminalRow*VGAWidth + cursorStart + endNumIndex - i] = first
 
-    inc(i)
+proc terminalWriteHex*(num: uint) =
+  terminalWrite("0x")
+
+  if num == 0:
+    terminalWrite("0")
+    return
+
+  discard """
+  Nim likes to replace array[0..n, char] with a cstring.. this won't do as we
+  cannot include <string.h>. So, while reversing the string using arrays would
+  have worked, using a similar method of swapping the terminal buffer entries
+  will work just as well
+  """
+
+  let cursorStart = terminalColumn
+  var endNumIndex = -1
+
+  var numCopy = num
+  while numCopy != 0:
+    let place = numCopy mod 16
+    numCopy = numCopy div 16
+    if place > cast[uint](9):
+      terminalPutChar(chr((cast[uint](65) + place - 10)))
+    else:
+      terminalPutChar(chr(cast[uint](48) + place))
+
+    inc(endNumIndex)
+
+  for i in 0..endNumIndex div 2:
+    #Swap in memory
+    let first = terminalBuffer[terminalRow*VGAWidth + cursorStart + i]
+    let last  = terminalBuffer[terminalRow*VGAWidth + cursorStart + endNumIndex - i]
+
+    terminalBuffer[terminalRow*VGAWidth + cursorStart + i ] = last
+    terminalBuffer[terminalRow*VGAWidth + cursorStart + endNumIndex - i] = first
