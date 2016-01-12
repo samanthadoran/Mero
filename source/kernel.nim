@@ -1,6 +1,7 @@
 import tty
 import vga
 import merosystem, isrs, irq
+import timer
 
 proc kernel_early() {.exportc.} =
   gdtInstall()
@@ -29,4 +30,4 @@ proc kernel_main() {.exportc.} =
   terminalWrite("\n")
 
   #Test exceptions...
-  terminalWriteDecimal(1 div 0)
+  timerInstall()
