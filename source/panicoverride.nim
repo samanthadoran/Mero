@@ -15,7 +15,7 @@ proc rawoutput(s: string) =
   terminalColumn = terminalOldColumn
   terminalSetColor(terminalOldColor)
 
-proc panic(s: string) =
+proc panic*(s: string) =
   rawoutput(s)
 
 {.pop.}

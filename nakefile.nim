@@ -5,7 +5,7 @@ import os
 
 const
   CC = "i686-elf-gcc"
-  asmC = "i686-elf-as"
+  asmC = "nasm -felf32"
 
 task "clean", "Removes build files.":
   removeFile("boot.o")
@@ -24,10 +24,6 @@ task "build", "Builds the operating system.":
 
   echo "Assembling..."
   direShell asmC, "i686-asm/boot.s -o boot.o"
-  direShell asmC, "i686-asm/crtn.s -o crtn.o"
-  direShell asmC, "i686-asm/crti.s -o crti.o"
-  direShell "nasm -felf32 i686-asm/gdt.s -o gdt.o"
-  direShell "nasm -felf32 i686-asm/interrupt.s -o interrupt.o"
 
   echo "Linking..."
 
@@ -46,6 +42,6 @@ task "run-bochs", "Runs the operating system using bochs.":
   direShell "sudo losetup -d /dev/loop99"
 
   echo("Running bochs...")
-  direShell "sudo /sbin/losetup /dev/loop99 floppy.img"
+  direShell "sudo /sbin/losetup /dev/loop0 floppy.img"
   direShell "sudo bochs -f bochsrc.txt"
-  direShell "sudo /sbin/losetup -d /dev/loop99"
+  direShell "sudo /sbin/losetup -d /dev/loop0"
