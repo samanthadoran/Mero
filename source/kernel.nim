@@ -1,11 +1,15 @@
 import tty
 import vga
-import merosystem, isrs
+import merosystem, isrs, irq
 
 proc kernel_early() {.exportc.} =
   gdtInstall()
   idtInstall()
   isrsInstall()
+  irqInstall()
+  asm """
+  sti
+  """
 
   terminalInitialize()
   terminalWrite("Initialized the terminal...\n")

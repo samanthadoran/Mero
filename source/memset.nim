@@ -7,7 +7,7 @@ typedef unsigned char  u8int;
 typedef          char  s8int;
 """}
 
-proc memset*(begin: uint8, value: uint8, size: uint32) =
+proc memset*(begin: ptr uint8, value: uint8, size: uint32) {.exportc} =
   {.emit: """
   u8int * tmp = `begin`;
   u32int len = `size`;

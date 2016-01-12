@@ -39,6 +39,7 @@ proc idtInstall*() =
   idtp.base = cast[uint32](addr(idt))
 
   #ISRs go here
-  memset(cast[uint8](addr(idt)), 0, cast[uint32](sizeof(idt_entry) * 256))
+  var ptr_idt: ptr uint8 = cast[ptr uint8](addr(idt))
+  memset(ptr_idt, 0, cast[uint32](sizeof(idt_entry) * 256))
 
   idtLoad()

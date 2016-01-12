@@ -1,7 +1,10 @@
 import idt, gdt
-import memset
+import memset, memcpy
+import asmwrapper
+
 export idt, gdt
-export memset
+export memset, memcpy
+export asmwrapper
 
 type
   registers* = object {.packed.}
