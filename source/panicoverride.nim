@@ -9,6 +9,7 @@ proc rawoutput(s: string) =
   terminalSetColor(makeVGAAttribute(Red, White))
   terminalRow = 24
   terminalColumn = 0
+
   terminalWrite(s)
 
   terminalRow = terminalOldRow
@@ -17,5 +18,7 @@ proc rawoutput(s: string) =
 
 proc panic*(s: string) =
   rawoutput(s)
+  while true:
+    discard
 
 {.pop.}

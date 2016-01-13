@@ -4,9 +4,9 @@ import vga
 var terminalRow*: int
 var terminalColumn*: int
 var terminalColor*: VGAAttribute
-var terminalBuffer*: VidMem
+var terminalBuffer* {.noinit.}: VidMem
 
-proc terminalWrite*(data: string)
+proc terminalWrite*(data: string) {.exportc.}
 proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int)
 
 proc terminalInitialize*() =
@@ -69,7 +69,7 @@ proc terminalWrite*(data: string) =
   for i in 0 .. <len(data):
     terminalPutChar(data[i])
 
-proc terminalWriteDecimal*(num: uint) =
+proc terminalWriteDecimal*(num: uint) {.exportc.} =
   #Properly add a negative for less than zero
   if num < 0:
     terminalPutChar('-')
