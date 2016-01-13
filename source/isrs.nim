@@ -177,8 +177,14 @@ proc isrsInstall*() =
   for i in 0..31:
     idtSetGate(cast[uint8](i), getIsr(i), 0x08, 0x8E)
 
-proc faultHandler*(regs: registers) {.exportc: "fault_handler".} =
+#Something about nim is mangling this...
+
+proc fault_handler(regs: registers){.exportc.} =
+  #Handle isr
+
+  #If it's an exception...
   if regs.int_no < 32:
+    #Halt and notify the user
     terminalWrite("Got exception: ")
     terminalWriteDecimal(regs.int_no)
     terminalWrite("\n")

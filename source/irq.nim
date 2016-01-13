@@ -1,5 +1,6 @@
 import merosystem
 import memset
+import tty
 
 {.emit: """
 extern void irq0();
@@ -21,6 +22,7 @@ extern void irq15();
 """}
 
 proc getIrq(i: int): uint32 =
+  #Get the address of an irq
   {.emit: """
   switch(`i`) {
   case 0:
@@ -75,41 +77,58 @@ proc getIrq(i: int): uint32 =
   """}
   return result
 
-var irq_routines: array[0..15, proc(regs: registers)]
+#Store handlers for various irqs
+var irq_routines: array[0..15, proc(regs: ptr registers)]
 
-proc installHandler*(irq: int, handler: proc(r: registers)) =
-  irq_routines[irq] = handler
+proc installHandler*(irq: int, handler: proc(r: ptr registers) = nil){.exportc.} =
+  #Add a handler..
+  {.emit: """
+  `irq_routines`[`irq`] = `handler`;
+  """}
 
 proc uninstallHandler*(irq: int) =
+  #Remove handler
   irq_routines[irq] = nil
 
 proc irqRemap() =
-  outb(0x20, 0x11);
-  outb(0xA0, 0x11);
-  outb(0x21, 0x20);
-  outb(0xA1, 0x28);
-  outb(0x21, 0x04);
-  outb(0xA1, 0x02);
-  outb(0x21, 0x01);
-  outb(0xA1, 0x01);
-  outb(0x21, 0x0);
-  outb(0xA1, 0x0);
+  #Prevent irqs from overlapping on PIC
+  outb(0x20, 0x11)
+  outb(0xA0, 0x11)
+  outb(0x21, 0x20)
+  outb(0xA1, 0x28)
+  outb(0x21, 0x04)
+  outb(0xA1, 0x02)
+  outb(0x21, 0x01)
+  outb(0xA1, 0x01)
+  outb(0x21, 0x00)
+  outb(0xA1, 0x00)
 
 proc irqInstall*() =
+  #Lazily do this instead of memset
   for i in 0..15:
     uninstallHandler(i)
 
+  #Remove conflicts with IRQ 0 - IRQ 8
   irqRemap()
-
   for i in 0..15:
-    idtSetGate(cast[uint8](32 + i), getIrq(i), 0x08, 0x8E)
+    idtSetGate(cast[uint8](32 + i), getIrq(i), cast[uint16](0x08), cast[uint8](0x8E))
 
-proc irqHandler*(regs: registers) {.exportc: "irq_handler"} =
-  let irqIndex: uint32 = regs.int_no - 32
-  var handler = irq_routines[irqIndex]
+proc irqHandler*(regs: ptr registers) {.exportc: "irq_handler"} =
+  #Handle various irqs
+
+  #Subtract by 32 to take into account we remapped
+  let irqIndex: uint32 = (regs.int_no) - 32
+
+  #DO NOT DELETE NOINIT
+  var handler{.noinit.}: proc(regs: ptr registers) = irq_routines[irqIndex]
+
+  #If we have a handler, use it
   if handler != nil:
     handler(regs)
 
-  if regs.int_no >= cast[uint32](40):
+  #If the int_no we got is above 39, send a response to the slave pic on 0xA0
+  if irqIndex + 32 >= cast[uint32](40):
     outb(0xA0, 0x20)
+
+  #Either way, send a response to the master pic
   outb(0x20, 0x20)
