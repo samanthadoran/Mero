@@ -9,6 +9,7 @@ const
 
 task "clean", "Removes build files.":
   removeFile("boot.o")
+  removeFile("interrupts.o")
   removeFile("gdt.o")
   removeFile("crti.o")
   removeFile("crtn.o")
@@ -23,23 +24,27 @@ task "build", "Builds the operating system.":
   direShell "nim c -d:release --gcc.exe:$1 source/kernel" % CC
 
   echo "Assembling..."
-  direShell asmC, "i686-asm/boot.s -o boot.o"
+  direShell asmc, "i686-asm/boot.s -o boot.o"
+  direShell "i686-elf-as i686-asm/crtn.s -o crtn.o"
+  direShell "i686-elf-as i686-asm/crti.s -o crti.o"
 
   echo "Linking..."
 
   direShell CC, "-T linker.ld -o mero.bin -ffreestanding -O2 -nostdlib *.o source/nimcache/*.o"
 
 task "run-qemu", "Runs the operating system using QEMU.":
-  if not existsFile("mero.bin"): runTask("build")
+  #if not existsFile("mero.bin"): runTask("build")
+  runTask("build")
   direShell "qemu-system-i386 -kernel mero.bin"
 
 task "run-bochs", "Runs the operating system using bochs.":
+  runTask("build")
   echo("Updating image...")
-  direShell "sudo losetup /dev/loop99 floppy.img"
-  direShell "sudo mount /dev/loop99 /mnt"
-  direShell "sudo cp kernel.bin /mnt/kernel"
-  direShell "sudo umount /dev/loop99"
-  direShell "sudo losetup -d /dev/loop99"
+  direShell "sudo losetup /dev/loop0 floppy.img"
+  direShell "sudo mount /dev/loop0 /mnt"
+  direShell "sudo cp mero.bin /mnt/kernel"
+  direShell "sudo umount /dev/loop0"
+  direShell "sudo losetup -d /dev/loop0"
 
   echo("Running bochs...")
   direShell "sudo /sbin/losetup /dev/loop0 floppy.img"

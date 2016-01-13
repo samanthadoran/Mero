@@ -7,6 +7,7 @@ type
     always0*: uint8
     flags*: uint8
     base_high*: uint16
+
   idt_ptr = object {.packed}
     limit*: uint16
     base*: uint32
@@ -38,8 +39,9 @@ proc idtInstall*() =
   idtp.limit = cast[uint16](sizeof(idt) * 256) - 1
   idtp.base = cast[uint32](addr(idt))
 
-  #ISRs go here
   var ptr_idt: ptr uint8 = cast[ptr uint8](addr(idt))
   memset(ptr_idt, 0, cast[uint32](sizeof(idt_entry) * 256))
+
+  #ISRs go here
 
   idtLoad()

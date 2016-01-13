@@ -1,6 +1,6 @@
 proc outb*(port: uint16, value: uint8) =
   {.emit: """
-  asm volatile ( "outb %0, %1" : : "a"(`value`), "Nd"(`port`) );
+  __asm__ __volatile__ ("outb %1, %0" : : "dN" (`port`), "a" (`value`));
   """}
 
 proc inb*(port: uint16): uint8 =

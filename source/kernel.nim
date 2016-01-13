@@ -1,21 +1,26 @@
 import tty
 import vga
 import merosystem, isrs, irq
-import timer
+import timer, keyboard
+
+type
+  TMultiboot_header = object
+  PMultiboot_header = ptr TMultiboot_header
 
 proc kernel_early() {.exportc.} =
   gdtInstall()
   idtInstall()
   isrsInstall()
   irqInstall()
-  asm """
-  sti
-  """
-
   terminalInitialize()
-  terminalWrite("Initialized the terminal...\n")
+  keyboardInstall()
+  timerInstall()
+  {.emit: """
+  __asm__ __volatile__ ("sti");
+  """}
 
-proc kernel_main() {.exportc.} =
+proc kernel_main() {.exportc noReturn.} =
+  terminalWrite("Initialized the terminal...\n")
   terminalWrite("Hello, world!\n")
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
   terminalWrite("Testing colors...\n")
@@ -29,5 +34,9 @@ proc kernel_main() {.exportc.} =
   terminalWriteHex(cast[uint](0xDEADBEEF))
   terminalWrite("\n")
 
-  #Test exceptions...
-  timerInstall()
+  #terminalWrite("Testing div by 0: ")
+  #terminalWriteDecimal(1 div 0)
+  #terminalWrite("\n")
+
+  while true:
+    discard
