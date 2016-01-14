@@ -177,7 +177,7 @@ proc isrsInstall*() =
   for i in 0..31:
     idtSetGate(cast[uint8](i), getIsr(i), 0x08, 0x8E)
 
-proc fault_handler(regs: registers){.exportc.} =
+proc fault_handler(regs: ptr registers){.exportc.} =
   #Handle isr
 
   #If it's an exception...
@@ -186,6 +186,5 @@ proc fault_handler(regs: registers){.exportc.} =
     terminalWrite("Got exception: ")
     terminalWriteDecimal(regs.int_no)
     terminalWrite("\n")
+    writeRegisters(regs)
     panic("EXCEPTION!!!!")
-    while true:
-      discard

@@ -37,7 +37,7 @@ proc kernel_main() {.exportc noReturn.} =
   #Test the use of timer's wait function
   terminalSlowWrite("Slow it on dooooowwwwwnnnnn.....\n", 4)
 
-  #terminalWrite("Testing div by 0: ")
+  #terminalWrite("Testing div by 0...\n")
   #terminalWriteDecimal(1 div 0)
   #terminalWrite("\n")
 

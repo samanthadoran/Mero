@@ -30,10 +30,12 @@ proc moveCursor*(x: int, y: int) =
   #Moves the cursor to the specified x, y
   let index: uint16 = cast[uint16](y * VGAWidth + x)
 
+  #Keyboard controller waits for two bytes, give it that.
   outb(cast[uint16](0x3D4), cast[uint8](14))
   outb(cast[uint16](0x3D5), cast[uint8](index shr 8))
+
   outb(cast[uint16](0x3D4), cast[uint8](15))
-  outb(cast[uint16](0x3D5), cast[uint8](index))
+  outb(cast[uint16](0x3D5), cast[uint8](index and 0xFF))
 
 proc scrollTerminal*() =
   #Scroll the terminal to give room for additional input
@@ -66,9 +68,29 @@ proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int) =
 
 proc terminalPutChar*(c: char) =
   #Write a character to the current terminal position
+
+  #Newline
   if ord(c) == 10:
     terminalColumn = 0
     inc(terminalRow)
+  #Backspace
+  elif ord(c) == 8:
+    #We can only backspace if...
+
+    #The terminal column is not zero..
+    if terminalColumn != 0:
+      dec(terminalColumn)
+    #Or the terminal row is not zero..
+    elif terminalRow != 0:
+      terminalColumn = 79
+      dec(terminalRow)
+    #Otherwise, where would we go?
+    else:
+      return
+
+    #"Delete" the character at the specified position
+    terminalPutEntryAt(' ', terminalColor, terminalColumn, terminalRow)
+  #Just a normal character
   else:
     terminalPutEntryAt(c, terminalColor, terminalColumn, terminalRow)
     inc(terminalColumn)
