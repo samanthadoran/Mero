@@ -15,16 +15,8 @@ type
 var idt: array[0..255, idt_entry]
 var idtp {.exportc.}: idt_ptr
 
-{.emit: """
-extern void idt_load();
-"""}
-
-proc idtLoad() =
-  #Wrapper function for pesky asm calls
-  {.emit: """
-  idt_load();
-  """}
-  return
+#Declared in boot.s
+proc idtLoad() {.importc: "idt_load".}
 
 proc idtSetGate*(num: uint8, base: uint32, sel: uint16, flags: uint8) =
   idt[num].base_low = base and 0xFFFF

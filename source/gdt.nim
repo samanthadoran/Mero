@@ -14,17 +14,8 @@ type
 var gdt: array[0..2, gdt_entry]
 var gp {.exportc.}: gdt_ptr
 
-{.emit: """
-extern void gdt_flush();
-"""}
-
-proc gdtFlush() =
-  #Wrapper function for pesky asm calls
-  {.emit: """
-  gdt_flush();
-  """}
-  return
-
+#Declared in boot.s
+proc gdtFlush() {.importc: "gdt_flush".}
 
 proc gdtSetGate(num: int, base: uint32, limit: uint32, access: uint8, gran: uint8) =
   gdt[num].base_low = base and 0xFFFF
