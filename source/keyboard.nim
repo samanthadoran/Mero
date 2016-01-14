@@ -7,9 +7,9 @@ proc keyboardHandler*(regs: ptr registers) {.exportc.}=
   var scancode: uint8 = inb(0x60)
 
   if (scancode and 0x80) != 0:
-    #Got a modifier key
+    #Got a keyrelease
     terminalWrite("Got scancode release: ")
-    terminalWriteDecimal(scancode)
+    terminalWriteDecimal(scancode xor 0x80)
     terminalWrite("\n")
   else:
     terminalWrite("Got scancode push: ")
@@ -21,4 +21,14 @@ proc keyboardInstall*() =
   {.emit: """
 	installHandler(((unsigned int) 1), `keyboardHandler`);
   """}
+
+  discard """
+  Why not just do this? It seems simpler, after all.
+
+  installHandler(1, keyboardHandler)
+
+  Well, enter one of my 'favorite' parts of working on this: compiler bugs
+  https://github.com/nim-lang/Nim/issues/3708
+  """
+
   terminalWrite("Keyboard handler installed...\n")

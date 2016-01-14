@@ -35,4 +35,14 @@ proc timerInstall*(hz: int = 18) =
   {.emit: """
 	installHandler(((unsigned int) 0), `timerHandler`);
   """}
+
+  discard """
+  Why not just do this? It seems simpler, after all.
+
+  installHandler(0, timerHandler)
+
+  Well, enter one of my 'favorite' parts of working on this: compiler bugs
+  https://github.com/nim-lang/Nim/issues/3708
+  """
+  
   terminalWrite("Timer handler installed...\n")
