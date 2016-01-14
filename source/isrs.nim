@@ -135,11 +135,10 @@ proc getIsr(i: int): uint32 =
     `result` = isr31;
   }
   """}
-  return result
 
 #TODO: Write copyString or genericAssign
+var exceptionMessage: array[0..31, string] #=
 discard """
-let exceptionMessage: array[0..31, string] =
   ["Division by zero!",
   "Debug...",
   "Non maskable interrupt",
@@ -172,12 +171,11 @@ let exceptionMessage: array[0..31, string] =
   "Reserved",
   "Reserved",
   "Reserved"]
-"""
+  """
+
 proc isrsInstall*() =
   for i in 0..31:
     idtSetGate(cast[uint8](i), getIsr(i), 0x08, 0x8E)
-
-#Something about nim is mangling this...
 
 proc fault_handler(regs: registers){.exportc.} =
   #Handle isr

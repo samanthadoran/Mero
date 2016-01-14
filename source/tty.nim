@@ -1,13 +1,18 @@
 import vga
 
+proc terminalWrite*(data: string) {.exportc.}
+proc terminalWriteDecimal*(num: uint)
+proc terminalWriteDecimal*(num: int)
+proc terminalWriteHex*(num: uint) {.exportc.}
+proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int)
+
+import timer
+
 #Using globals until get alloc working
 var terminalRow*: int
 var terminalColumn*: int
 var terminalColor*: VGAAttribute
 var terminalBuffer* {.noinit.}: VidMem
-
-proc terminalWrite*(data: string) {.exportc.}
-proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int)
 
 proc terminalInitialize*() =
   #Initialize the terminal
@@ -69,7 +74,13 @@ proc terminalWrite*(data: string) =
   for i in 0 .. <len(data):
     terminalPutChar(data[i])
 
-proc terminalWriteDecimal*(num: uint) {.exportc.} =
+proc terminalSlowWrite*(data: string, ticksToWait: uint32) =
+  #Write a string to the terminal -- slowly
+  for i in 0 .. <len(data):
+    terminalPutChar(data[i])
+    wait(ticksToWait)
+
+proc terminalWriteDecimal*(num: uint) =
   #Properly add a negative for less than zero
   if num < 0:
     terminalPutChar('-')

@@ -75,7 +75,6 @@ proc getIrq(i: int): uint32 =
     break;
   }
   """}
-  return result
 
 #Store handlers for various irqs
 var irq_routines: array[0..15, proc(regs: ptr registers)]
