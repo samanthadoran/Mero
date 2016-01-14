@@ -7,4 +7,12 @@ typedef unsigned char  u8int;
 typedef          char  s8int;
 """}
 
-discard
+proc memcpy*(destination: ptr uint8, source: uint8, size: uint32) {.exportc} =
+  {.emit: """
+  u8int * dst = `destination`;
+  u8int * src = `source`;
+  u32int len = `size`;
+  for(int i = 0; i < len; ++i)
+    dst[i] = src[i];
+  """}
+  return
