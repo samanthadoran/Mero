@@ -1,4 +1,4 @@
-import vga
+import vga, asmwrapper
 
 proc terminalWrite*(data: string) {.exportc.}
 proc terminalWriteDecimal*(num: uint)
@@ -25,6 +25,15 @@ proc terminalInitialize*() =
     for x in 0 .. <VGAWidth:
       let index = y * VGAWidth + x
       terminalBuffer[index] = makeVGAEntry(' ', terminalColor)
+
+proc moveCursor*(x: int, y: int) =
+  #Moves the cursor to the specified x, y
+  let index: uint16 = cast[uint16](y * VGAWidth + x)
+
+  outb(cast[uint16](0x3D4), cast[uint8](14))
+  outb(cast[uint16](0x3D5), cast[uint8](index shr 8))
+  outb(cast[uint16](0x3D4), cast[uint8](15))
+  outb(cast[uint16](0x3D5), cast[uint8](index))
 
 proc scrollTerminal*() =
   #Scroll the terminal to give room for additional input
@@ -68,6 +77,7 @@ proc terminalPutChar*(c: char) =
       inc(terminalRow)
 
   scrollTerminal()
+  moveCursor(terminalColumn, terminalRow)
 
 proc terminalWrite*(data: string) =
   #Write a string to the terminal
