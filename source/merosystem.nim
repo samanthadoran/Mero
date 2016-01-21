@@ -1,10 +1,10 @@
 import tty
 import idt, gdt
-import memset, memcpy
+import memory
 import asmwrapper
 
 export idt, gdt
-export memset, memcpy
+export memory
 export asmwrapper
 
 
@@ -25,31 +25,31 @@ type
 proc writeRegisters*(regs: ptr registers){.exportc.} =
   #Annoying function to visually debug the register stack frame from irqs and isrs
   terminalWrite("gs: ")
-  terminalWriteDecimal(regs.gs)
+  terminalWriteHex(regs.gs)
   terminalWrite("     ")
 
   terminalWrite("fs: ")
-  terminalWriteDecimal(regs.fs)
+  terminalWriteHex(regs.fs)
   terminalWrite("     ")
 
   terminalWrite("es: ")
-  terminalWriteDecimal(regs.es)
+  terminalWriteHex(regs.es)
   terminalWrite("\n")
 
   terminalWrite("ds: ")
-  terminalWriteDecimal(regs.ds)
+  terminalWriteHex(regs.ds)
   terminalWrite("     ")
 
   terminalWrite("edi: ")
-  terminalWriteDecimal(regs.edi)
+  terminalWriteHex(regs.edi)
   terminalWrite("     ")
 
   terminalWrite("esi: ")
-  terminalWriteDecimal(regs.esi)
+  terminalWriteHex(regs.esi)
   terminalWrite("\n")
 
   terminalWrite("ebp: ")
-  terminalWriteDecimal(regs.ebp)
+  terminalWriteHex(regs.ebp)
   terminalWrite("     ")
 
   terminalWrite("esp: ")
@@ -57,45 +57,45 @@ proc writeRegisters*(regs: ptr registers){.exportc.} =
   terminalWrite("     ")
 
   terminalWrite("ebx: ")
-  terminalWriteDecimal(regs.ebx)
+  terminalWriteHex(regs.ebx)
   terminalWrite("\n")
 
   terminalWrite("edx: ")
-  terminalWriteDecimal(regs.edx)
+  terminalWriteHex(regs.edx)
   terminalWrite("     ")
 
   terminalWrite("ecx: ")
-  terminalWriteDecimal(regs.ecx)
+  terminalWriteHex(regs.ecx)
   terminalWrite("     ")
 
   terminalWrite("eax: ")
-  terminalWriteDecimal(regs.eax)
+  terminalWriteHex(regs.eax)
   terminalWrite("\n")
 
   terminalWrite("int_no: ")
-  terminalWriteDecimal(regs.int_no)
+  terminalWriteHex(regs.int_no)
   terminalWrite("     ")
 
   terminalWrite("err_code: ")
-  terminalWriteDecimal(regs.err_code)
+  terminalWriteHex(regs.err_code)
   terminalWrite("     ")
 
   terminalWrite("eip: ")
-  terminalWriteDecimal(regs.eip)
+  terminalWriteHex(regs.eip)
   terminalWrite("\n")
 
   terminalWrite("cs: ")
-  terminalWriteDecimal(regs.cs)
+  terminalWriteHex(regs.cs)
   terminalWrite("     ")
 
   terminalWrite("eflags: ")
-  terminalWriteDecimal(regs.eflags)
+  terminalWriteHex(regs.eflags)
   terminalWrite("     ")
 
   terminalWrite("useresp: ")
-  terminalWriteDecimal(regs.useresp)
+  terminalWriteHex(regs.useresp)
   terminalWrite("\n")
 
   terminalWrite("ss: ")
-  terminalWriteDecimal(regs.ss)
+  terminalWriteHex(regs.ss)
   terminalWrite("\n")
