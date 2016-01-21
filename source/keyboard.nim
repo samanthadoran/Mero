@@ -59,6 +59,8 @@ proc keyboardHandler*(regs: ptr registers) {.exportc.}=
     if ord(character) != 0:
       terminalPutChar(character)
     else:
+      terminalWrite("GOT DEBUG SIGNAL!!!\n")
+      terminalWriteDecimal(1 div 0)
       terminalWrite("Unrecognized scancode...")
     #terminalWrite("\n")
 

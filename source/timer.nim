@@ -4,6 +4,7 @@ import irq
 
 var ticks {.volatile.}: uint32 = 0
 var seconds: uint32 = 0
+var minutes: uint32 = 0
 
 proc setPhase(hz: int) =
   #How many times a second should the clock tick?
@@ -20,15 +21,28 @@ proc wait*(ticksToWait: uint32) =
     __asm__ __volatile__ ("sti//hlt//cli");
     """}
 
+proc writeUptime() =
+  let terminalColumnOld = terminalColumn
+  let terminalRowOld = terminalRow
+  terminalRow = 23
+  terminalColumn = 60
+  terminalWrite("UPTIME: ")
+  terminalWriteDecimal(minutes)
+  terminalWrite(":")
+  terminalWriteDecimal(seconds mod 60)
+  terminalWrite("\n")
+  terminalRow = terminalRowOld
+  terminalColumn = terminalColumnOld
+  moveCursor(terminalColumn, terminalRow)
+
 proc timerHandler*(regs: ptr registers) {.exportc.}=
   #A neat little timekeeper
   inc(ticks)
   if ticks mod 18 == 0:
     inc(seconds)
     if seconds mod 60 == 0:
-      terminalWrite("The system has been up for ")
-      terminalWriteDecimal(seconds div 60)
-      terminalWrite(" minutes.\n")
+      inc(minutes)
+  writeUptime()
 
 proc timerInstall*(hz: int = 18) =
   #setPhase(hz)
@@ -44,5 +58,5 @@ proc timerInstall*(hz: int = 18) =
   Well, enter one of my 'favorite' parts of working on this: compiler bugs
   https://github.com/nim-lang/Nim/issues/3708
   """
-  
+
   terminalWrite("Timer handler installed...\n")
