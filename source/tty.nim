@@ -1,16 +1,20 @@
 import vga, asmwrapper
 
-proc terminalWrite*(data: string) {.exportc.}
+proc terminalWrite*(data: string)
+proc terminalWrite*(data: cstring) {.exportc: "terminal_write".}
 proc terminalWriteDecimal*(num: uint)
 proc terminalWriteDecimal*(num: int)
 proc terminalWriteHex*(num: uint) {.exportc.}
 proc terminalPutEntryAt*(c: char, color: VGAAttribute, x: int, y: int)
-
-import timer
-
-#Using globals until get alloc working
+proc moveCursor*(x: int, y: int)
 var terminalRow*: int
 var terminalColumn*: int
+import timer
+export vga
+
+#Using globals until get alloc working
+#var terminalRow*: int
+#var terminalColumn*: int
 var terminalColor*: VGAAttribute
 var terminalBuffer* {.noinit.}: VidMem
 
@@ -100,6 +104,12 @@ proc terminalPutChar*(c: char) =
 
   scrollTerminal()
   moveCursor(terminalColumn, terminalRow)
+
+proc terminalWrite*(data: cstring) =
+  var i = 0
+  while data[i] != '\0':
+    terminalPutChar(data[i])
+    inc(i)
 
 proc terminalWrite*(data: string) =
   #Write a string to the terminal

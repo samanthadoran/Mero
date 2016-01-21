@@ -26,7 +26,7 @@ proc writeRegisters*(regs: ptr registers){.exportc.} =
   #Annoying function to visually debug the register stack frame from irqs and isrs
   terminalWrite("gs: ")
   terminalWriteDecimal(regs.gs)
-  terminalWrite("\n")
+  terminalWrite("     ")
 
   terminalWrite("fs: ")
   terminalWriteDecimal(regs.fs)
@@ -42,15 +42,15 @@ proc writeRegisters*(regs: ptr registers){.exportc.} =
 
   terminalWrite("edi: ")
   terminalWriteDecimal(regs.edi)
-  terminalWrite("\n")
+  terminalWrite("     ")
 
   terminalWrite("esi: ")
   terminalWriteDecimal(regs.esi)
-  terminalWrite("     ")
+  terminalWrite("\n")
 
   terminalWrite("ebp: ")
   terminalWriteDecimal(regs.ebp)
-  terminalWrite("\n")
+  terminalWrite("     ")
 
   terminalWrite("esp: ")
   terminalWriteHex(regs.esp)
@@ -66,15 +66,15 @@ proc writeRegisters*(regs: ptr registers){.exportc.} =
 
   terminalWrite("ecx: ")
   terminalWriteDecimal(regs.ecx)
-  terminalWrite("\n")
+  terminalWrite("     ")
 
   terminalWrite("eax: ")
   terminalWriteDecimal(regs.eax)
-  terminalWrite("     ")
+  terminalWrite("\n")
 
   terminalWrite("int_no: ")
   terminalWriteDecimal(regs.int_no)
-  terminalWrite("\n")
+  terminalWrite("     ")
 
   terminalWrite("err_code: ")
   terminalWriteDecimal(regs.err_code)
@@ -90,11 +90,11 @@ proc writeRegisters*(regs: ptr registers){.exportc.} =
 
   terminalWrite("eflags: ")
   terminalWriteDecimal(regs.eflags)
-  terminalWrite("\n")
+  terminalWrite("     ")
 
   terminalWrite("useresp: ")
   terminalWriteDecimal(regs.useresp)
-  terminalWrite("     ")
+  terminalWrite("\n")
 
   terminalWrite("ss: ")
   terminalWriteDecimal(regs.ss)

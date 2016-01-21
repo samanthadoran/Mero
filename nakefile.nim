@@ -48,5 +48,5 @@ task "run-bochs", "Runs the operating system using bochs.":
 
   echo("Running bochs...")
   direShell "sudo /sbin/losetup /dev/loop0 floppy.img"
-  direShell "sudo bochs -f bochsrc.txt"
+  direShell "sudo bochs -q -f bochsrc.txt"
   direShell "sudo /sbin/losetup -d /dev/loop0"
