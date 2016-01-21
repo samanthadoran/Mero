@@ -3,6 +3,7 @@ ENTRY(start)
 phys = 0x00100000;
 SECTIONS
 {
+  kernel_start = .;
   .text phys : AT(phys) {
     code = .;
     *(.text)

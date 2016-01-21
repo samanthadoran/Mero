@@ -1,25 +1,70 @@
 import tty
-import vga
 import merosystem, isrs, irq
 import timer, keyboard
+import paging
+
+#TODO: This is out of date???
+discard """
+The multiboot spec from: https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+follows for reference.
+The layout of the Multiboot header must be as follows:
+
+Offset 	Type 	Field Name 	Note
+0 	u32 	magic 	required
+4 	u32 	flags 	required
+8 	u32 	checksum 	required
+12 	u32 	header_addr 	if flags[16] is set
+16 	u32 	load_addr 	if flags[16] is set
+20 	u32 	load_end_addr 	if flags[16] is set
+24 	u32 	bss_end_addr 	if flags[16] is set
+28 	u32 	entry_addr 	if flags[16] is set
+32 	u32 	mode_type 	if flags[2] is set
+36 	u32 	width 	if flags[2] is set
+40 	u32 	height 	if flags[2] is set
+44 	u32 	depth 	if flags[2] is set
+"""
 
 type
   TMultiboot_header = object
+    magic:          uint32
+    flags:          uint32
+    checksum:       uint32
+    headerAddress:  uint32
+    loadAddress:    uint32
+    loadEndAddress: uint32
+    bssEndAddress:  uint32
+    entryAddress:   uint32
+    modeType:       uint32
+    width:          uint32
+    height:         uint32
+    depth:          uint32
+
   PMultiboot_header = ptr TMultiboot_header
 
 proc kernel_early() {.exportc.} =
+  #Things we need to happen before everything else.
   gdtInstall()
   idtInstall()
   isrsInstall()
   irqInstall()
+  allocInstall()
+
+  #Don't do anything serious until all tables are initialized.
   terminalInitialize()
   keyboardInstall()
   timerInstall()
+
+  #Once we're done, we can safely enable hardware maskable interrupts
   {.emit: """
   __asm__ __volatile__ ("sti");
   """}
 
-proc kernel_main() {.exportc noReturn.} =
+proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
+  #if cast[uint32](addr(page_directory[0])) mod 4 != 0:
+  #  panic("Page directory not 4KB aligned!\n")
+  #terminalWrite("Div by 0: ")
+  #terminalWriteDecimal(1 div 0)
+  #terminalWrite("\n")
   terminalWrite("Initialized the terminal...\n")
   terminalWrite("Hello, world!\n")
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
@@ -35,10 +80,27 @@ proc kernel_main() {.exportc noReturn.} =
   terminalWrite("\n")
 
   #Test the use of timer's wait function
-  terminalSlowWrite("Slow it on dooooowwwwwnnnnn.....\n", 4)
+  #terminalSlowWrite("Slow it on dooooowwwwwnnnnn.....\n", 4)
+  terminalSetColor(makeVGAAttribute(Red, Black))
+  terminalWrite("WARNING: Escape causes debug interrupt!!!!\n")
+  terminalSetColor(makeVGAAttribute(Green, Black))
 
-  #terminalWrite("Testing div by 0...\n")
-  #terminalWriteDecimal(1 div 0)
+  terminalWrite("Testing mallocs...\n")
+  while true:
+    var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+    xp[] = 777
+    terminalWrite("Zzz....: ")
+    terminalWriteHex(cast[uint32](xp))
+    terminalWrite(": ")
+    terminalWriteDecimal(xp[])
+    terminalWrite("\n")
+  #var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  #var yp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  #xp[] = 777
+  #yp[] = 999
+  #terminalWriteDecimal(xp[])
+  #terminalWrite(" and ")
+  #terminalWriteDecimal(yp[])
   #terminalWrite("\n")
 
   while true:
