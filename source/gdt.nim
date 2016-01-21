@@ -42,4 +42,5 @@ proc gdtInstall*() =
   #Init data segment
   gdtSetGate(2, 0, cast[uint32](0xFFFFFFFF), 0x92, 0xCF)
 
+  #Tell the cpu about our GDT
   gdtFlush()

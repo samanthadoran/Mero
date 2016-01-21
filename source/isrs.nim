@@ -1,5 +1,8 @@
 import merosystem, tty
 
+#cstrings for now because nim strings are apparently a pain
+var exceptionMessages {.noinit.}: array[0..31, cstring]
+
 {.emit: """
 extern void isr0();
 extern void isr1();
@@ -137,45 +140,42 @@ proc getIsr(i: int): uint32 =
   """}
 
 #TODO: Write copyString or genericAssign
-var exceptionMessage: array[0..31, string] #=
-discard """
-  ["Division by zero!",
-  "Debug...",
-  "Non maskable interrupt",
-  "Int 3",
-  "INTO",
-  "Out of Bounds",
-  "Bad opcode",
-  "Coprocessor unavailable",
-  "Double fault",
-  "Coprocessor segment overrun",
-  "Bad TSS",
-  "Segment not present",
-  "Stack Fault",
-  "General Protection Fault",
-  "Page Fault",
-  "Reserved",
-  "Floating Point",
-  "Alignment Check",
-  "Machine Check",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved"]
-  """
 
 proc isrsInstall*() =
   for i in 0..31:
     idtSetGate(cast[uint8](i), getIsr(i), 0x08, 0x8E)
+  exceptionMessages[0] = "Division by zero!\0"
+  exceptionMessages[1] = "Debug!\0"
+  exceptionMessages[2] = "Non maskable interrupt!\0"
+  exceptionMessages[3] = "INT 3!\0"
+  exceptionMessages[4] = "INTO!\0"
+  exceptionMessages[5] = "Out of Bounds!\0"
+  exceptionMessages[6] = "Bad opcode!\0"
+  exceptionMessages[7] = "Co-processor unavailable!\0"
+  exceptionMessages[8] = "Double Fault!\0"
+  exceptionMessages[9] = "Co-processor segment overrun!\0"
+  exceptionMessages[10] = "Bad TSS!\0"
+  exceptionMessages[11] = "Segment not present!\0"
+  exceptionMessages[12] = "Stack fault!\0"
+  exceptionMessages[13] = "General Protection Fault!\0"
+  exceptionMessages[14] = "Page fault!\0"
+  exceptionMessages[15] = "Reserved!\0"
+  exceptionMessages[16] = "Floating point exception!\0"
+  exceptionMessages[17] = "Alignment Check!\0"
+  exceptionMessages[18] = "Machine Check!\0"
+  exceptionMessages[19] = "Reserved!\0"
+  exceptionMessages[20] = "Reserved!\0"
+  exceptionMessages[21] = "Reserved!\0"
+  exceptionMessages[22] = "Reserved!\0"
+  exceptionMessages[23] = "Reserved!\0"
+  exceptionMessages[24] = "Reserved!\0"
+  exceptionMessages[25] = "Reserved!\0"
+  exceptionMessages[26] = "Reserved!\0"
+  exceptionMessages[27] = "Reserved!\0"
+  exceptionMessages[28] = "Reserved!\0"
+  exceptionMessages[29] = "Reserved!\0"
+  exceptionMessages[30] = "Reserved!\0"
+  exceptionMessages[31] = "Reserved!\0"
 
 proc fault_handler(regs: ptr registers){.exportc.} =
   #Handle isr
@@ -183,8 +183,12 @@ proc fault_handler(regs: ptr registers){.exportc.} =
   #If it's an exception...
   if regs.int_no < 32:
     #Halt and notify the user
-    terminalWrite("Got exception: ")
+    terminalWrite("\n================================================================================")
+    terminalWrite("Got exception ")
     terminalWriteDecimal(regs.int_no)
+    terminalWrite(": ")
+    terminalWrite(exceptionMessages[regs.int_no])
     terminalWrite("\n")
+    terminalWrite("================================================================================")
     writeRegisters(regs)
     panic("EXCEPTION!!!!")

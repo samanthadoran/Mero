@@ -1,5 +1,5 @@
 import merosystem
-import memset
+import memory
 import tty
 
 {.emit: """

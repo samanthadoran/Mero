@@ -1,4 +1,4 @@
-import memset
+import memory
 
 type
   idt_entry = object {.packed.}
@@ -36,4 +36,5 @@ proc idtInstall*() =
 
   #ISRs go here
 
+  #Tell the cpu about our idt
   idtLoad()
