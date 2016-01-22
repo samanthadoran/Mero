@@ -1,5 +1,5 @@
 import tty
-import merosystem, isrs, irq
+import merosystem, isrs, irq, math
 import timer, keyboard
 import paging
 
@@ -86,7 +86,8 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
   terminalSetColor(makeVGAAttribute(Green, Black))
 
   terminalWrite("Testing mallocs...\n")
-  while true:
+
+  for i in 0..10:
     var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
     xp[] = 777
     terminalWrite("Zzz....: ")
@@ -94,13 +95,21 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
     terminalWrite(": ")
     terminalWriteDecimal(xp[])
     terminalWrite("\n")
-  #var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
-  #var yp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
-  #xp[] = 777
-  #yp[] = 999
-  #terminalWriteDecimal(xp[])
-  #terminalWrite(" and ")
-  #terminalWriteDecimal(yp[])
+  
+  terminalWrite("Testing log2(1) should be 0: ")
+  terminalWriteDecimal(log2(1))
+  terminalWrite("\n")
+
+  terminalWrite("Testing 2^0 should be 1: ")
+  terminalWriteDecimal(pow(2, 0))
+  terminalWrite("\n")
+
+  terminalWrite("Testing 0^1 should be 0: ")
+  terminalWriteDecimal(pow(0, 1))
+  terminalWrite("\n")
+
+  #terminalWrite("Testing 0^0 should fault: ")
+  #terminalWriteDecimal(pow(0, 0))
   #terminalWrite("\n")
 
   while true:
