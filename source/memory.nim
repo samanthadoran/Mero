@@ -16,17 +16,14 @@ var buddyHeap: uint32
 
 var currPlace*: uint32
 
-#TODO: Implement early malloc so that freelists can be instantiated
-#Implement a method to track sizes with address, array using address as index
-#with size in it?
-#log2 int could just use bsr, pow will just have to be iterative
+#TODO: Implement a method to track sizes with address, array using address as
+#index with size in it?
 
 proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
   #Recursively manipulate blocks until you have made the block you need
 
   #We are done splitting blocks, return
   if beginningOrder == finalOrder:
-    #terminalWrite("Beginning order is final order\n")
     result = freeLists[finalOrder].address
     freeLists[finalOrder] = freeLists[finalOrder].next
   else:
@@ -40,13 +37,22 @@ proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
     #Remove the block from beginningOrder
     freeLists[beginningOrder] = freeLists[beginningOrder].next
 
-    #Add the size of beginningOrder to y
-    y.address = x.address + cast[uint32](pow(2, (log2(order0size) + beginningOrder)))
+    discard """
+    Add the size of beginningOrder to y. This math looks scary, but it is simple.
+    We need to multiply order0's size by 2^(beginningOrder + 1) so that we get
+    the proper offset. The plus one is required, otherwise we would get wrong
+    sized block addresses.
+    """
+    y.address = x.address + cast[uint32](order0size) *
+                cast[uint32](pow(2, (beginningOrder + 1)))
 
     #Move the blocks to their new free lists
     y.next = freeLists[beginningOrder - 1]
     x.next = y
     freeLists[beginningOrder - 1] = x
+
+    if freeLists[beginningOrder - 1].next == nil:
+      terminalWrite("ffs\n")
 
     #Recursively call until we are at the desired size.
     result = makeOrderFromOrder(finalOrder, beginningOrder - 1)
@@ -62,6 +68,8 @@ proc getFreeBlock(size: uint32): uint32 =
     #If there is a free block of order i...
     if freeLists[i] != nil:
       result = makeOrderFromOrder(order, i)
+      #Don't forget to break the loop!
+      break
 
 proc allocInstall*() =
   currPlace = cast[uint32](addr(endkernel)) + 0x2000
@@ -91,7 +99,7 @@ proc allocInstall*() =
   if freeLists[maxOrder] == nil:
     terminalWrite("Well, max order is nil in alloc install, this is bad.\n")
 
-proc kfree(address: uint32) =
+proc kfree*(address: uint32) =
   discard
 
 proc kmalloc*(size: uint32, align: uint32 = 4): uint32 =
