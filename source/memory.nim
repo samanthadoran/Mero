@@ -1,21 +1,22 @@
 import tty, merosystem, math
 type
-  NodeObj = object
-    next: Node
+  Node = object
+    next: ptr Node
     address: uint32
-  Node = ref NodeObj
-
-var freeLists {.noinit.}: array[10, Node]
+  #Node = ref NodeObj
 
 #The minimum block size is going to be 64K for now
 const order0size = 0xFA00
-const maxOrder = 9
+const maxOrder = 5
+
+var freeLists {.noinit.}: ptr array[maxOrder + 1, ptr Node]
 var endkernel {.importc: "end"}: uint32
 var startkernel {.importc: "kernel_start"}: uint32
+var buddyHeap: uint32
 
-var currPlace*: uint32 = cast[uint32](addr(endkernel))
+var currPlace*: uint32
 
-#TODO: Implement log2(int) and pow(int, int) for sizing calculations
+#TODO: Implement early malloc so that freelists can be instantiated
 #Implement a method to track sizes with address, array using address as index
 #with size in it?
 #log2 int could just use bsr, pow will just have to be iterative
@@ -25,11 +26,16 @@ proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
 
   #We are done splitting blocks, return
   if beginningOrder == finalOrder:
+    #terminalWrite("Beginning order is final order\n")
     result = freeLists[finalOrder].address
     freeLists[finalOrder] = freeLists[finalOrder].next
   else:
-    var x, y: Node
+    var x, y: ptr Node
     x = freelists[beginningOrder]
+
+    #Give y some space!
+    y = cast[ptr Node](buddyHeap)
+    buddyHeap = buddyHeap + cast[uint32](sizeof(Node))
 
     #Remove the block from beginningOrder
     freeLists[beginningOrder] = freeLists[beginningOrder].next
@@ -48,33 +54,53 @@ proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
 proc getFreeBlock(size: uint32): uint32 =
   #Return an address to a free block
   #Get the order based upon our order0size
+
   let order = if size <= order0size: 0 else: log2(cast[int](size)) - log2(order0size)
 
   #Iterate until we have a free block to work with
   for i in order ..  maxOrder:
     #If there is a free block of order i...
     if freeLists[i] != nil:
-      #Manipulate it and store free blocks appropriately
       result = makeOrderFromOrder(order, i)
 
 proc allocInstall*() =
-  currPlace = cast[uint32](addr(endkernel)) + 0x1000
+  currPlace = cast[uint32](addr(endkernel)) + 0x2000
+  buddyHeap = cast[uint32](addr(endkernel))
+
   #Init freelists object
-  #freeLists[9] =
+  {.emit: """
+  `freeLists` = `buddyHeap`;
+  """}
+
+  #Don't let anything hit the array
+  buddyHeap = buddyHeap + 0x500
+
+  #Safety precaution, 0 the array
+  for i in 0 .. maxOrder:
+    freeLists[i] = nil
+
+  #Make sure we have some memory to start out with
+  freeLists[maxOrder] = cast[ptr Node](buddyHeap)
+
+  #Move the pointer along
+  buddyHeap = buddyHeap + cast[uint32](sizeof(Node))
+
+  freeLists[maxOrder].address = currPlace + 0x1000
+  freeLists[maxOrder].next = nil
+
+  if freeLists[maxOrder] == nil:
+    terminalWrite("Well, max order is nil in alloc install, this is bad.\n")
 
 proc kfree(address: uint32) =
   discard
 
 proc kmalloc*(size: uint32, align: uint32 = 4): uint32 =
   #TODO: THIS MUST BE ALIGNED!!!
-  result = getFreeBlock(size)
-  discard """
-  if currPlace mod align != 0:
-    currPlace = currPlace + 1
-
-  result = currPlace
-  currPlace = size + result
-  """
+  let order = if size <= order0size: 0 else: log2(cast[int](size)) - log2(order0size)
+  if order <= maxOrder:
+    result = getFreeBlock(size)
+  else:
+    terminalWrite("Cannot alloc block that large...")
 
 proc memcpy*(destination: pointer, source: pointer, size: uint32) {.exportc.} =
   var dstu8 = cast[ptr uint8](destination)

@@ -47,12 +47,12 @@ proc kernel_early() {.exportc.} =
   idtInstall()
   isrsInstall()
   irqInstall()
-  allocInstall()
 
   #Don't do anything serious until all tables are initialized.
   terminalInitialize()
   keyboardInstall()
   timerInstall()
+  allocInstall()
 
   #Once we're done, we can safely enable hardware maskable interrupts
   {.emit: """
@@ -87,15 +87,15 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
 
   terminalWrite("Testing mallocs...\n")
 
-  for i in 0..10:
+  for i in 0..3:
     var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
     xp[] = 777
-    terminalWrite("Zzz....: ")
+    terminalWrite("Got block at: ")
     terminalWriteHex(cast[uint32](xp))
-    terminalWrite(": ")
+    terminalWrite(". Setting the value to: ")
     terminalWriteDecimal(xp[])
     terminalWrite("\n")
-  
+
   terminalWrite("Testing log2(1) should be 0: ")
   terminalWriteDecimal(log2(1))
   terminalWrite("\n")
