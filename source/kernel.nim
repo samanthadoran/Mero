@@ -80,33 +80,68 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
   terminalWrite("\n")
 
   #Test the use of timer's wait function
-  #terminalSlowWrite("Slow it on dooooowwwwwnnnnn.....\n", 4)
   terminalSetColor(makeVGAAttribute(Red, Black))
   terminalWrite("WARNING: Escape causes debug interrupt!!!!\n")
   terminalSetColor(makeVGAAttribute(Green, Black))
 
-  terminalWrite("Testing mallocs...\n")
+  terminalWrite("\nTesting mallocs...\n")
 
-  for i in 0..3:
-    var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
-    xp[] = 777
+  var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  xp[] = 777
+  var xpAddr: uint32 = cast[uint32](xp)
+
+  when false:
     terminalWrite("Got block at: ")
     terminalWriteHex(cast[uint32](xp))
     terminalWrite(". Setting the value to: ")
     terminalWriteDecimal(xp[])
     terminalWrite("\n")
 
+  for i in 0..3:
+    var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+    xp[] = 777
+    when false:
+      terminalWrite("Got block at: ")
+      terminalWriteHex(cast[uint32](xp))
+      terminalWrite(". Setting the value to: ")
+      terminalWriteDecimal(xp[])
+      terminalWrite("\n")
+
+  terminalWrite("Freeing first malloc! We should now get it's address for this malloc\n")
+  kfree(cast[uint32](xp))
+  xp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  xp[] = 777
+
+  terminalWrite("Malloc and Free tests: ")
+  if xpAddr == cast[uint32](xp):
+    terminalWrite("SUCCESS!\n\n")
+  else:
+    terminalWrite("FAILURE!\n\n")
+    while true:
+      discard
+
+  terminalWrite("\nTesting math...\n")
+
   terminalWrite("Testing log2(1) should be 0: ")
-  terminalWriteDecimal(log2(1))
-  terminalWrite("\n")
+  #terminalWriteDecimal(log2(1))
+  if log2(1) == 0:
+    terminalWrite("SUCCESS!\n")
+  else:
+    terminalWrite("FAILURE!\n")
 
   terminalWrite("Testing 2^0 should be 1: ")
-  terminalWriteDecimal(pow(2, 0))
-  terminalWrite("\n")
+  if pow(2, 0) == 1:
+    terminalWrite("SUCCESS!\n")
+  else:
+    terminalWrite("FAILURE!\n")
 
   terminalWrite("Testing 0^1 should be 0: ")
-  terminalWriteDecimal(pow(0, 1))
-  terminalWrite("\n")
+  if pow(0, 1) == 0:
+    terminalWrite("SUCCESS!\n")
+  else:
+    terminalWrite("FAILURE!\n")
+
+  terminalSlowWrite("\nSlow it on dooooowwwwwnnnnn.....\n", 4)
 
   #terminalWrite("Testing 0^0 should fault: ")
   #terminalWriteDecimal(pow(0, 0))
