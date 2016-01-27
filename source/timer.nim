@@ -29,6 +29,8 @@ proc writeUptime() =
   terminalWrite("UPTIME: ")
   terminalWriteDecimal(minutes)
   terminalWrite(":")
+  if seconds mod 60 < 10:
+    terminalWriteDecimal(0)
   terminalWriteDecimal(seconds mod 60)
   terminalWrite("\n")
   terminalRow = terminalRowOld

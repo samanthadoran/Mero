@@ -50,9 +50,19 @@ proc kernel_early() {.exportc.} =
 
   #Don't do anything serious until all tables are initialized.
   terminalInitialize()
+  terminalWrite("Initialized the terminal...\n")
+
+  #Let's enable paging
+  initPaging()
+  terminalWrite("Paging initialized...\n")
+
+  #Malloc and free
+  allocInstall()
+  terminalWrite("Allocation systems initialized...\n")
+
+  #Some handlers..
   keyboardInstall()
   timerInstall()
-  allocInstall()
 
   #Once we're done, we can safely enable hardware maskable interrupts
   {.emit: """
@@ -60,12 +70,6 @@ proc kernel_early() {.exportc.} =
   """}
 
 proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
-  #if cast[uint32](addr(page_directory[0])) mod 4 != 0:
-  #  panic("Page directory not 4KB aligned!\n")
-  #terminalWrite("Div by 0: ")
-  #terminalWriteDecimal(1 div 0)
-  #terminalWrite("\n")
-  terminalWrite("Initialized the terminal...\n")
   terminalWrite("Hello, world!\n")
   terminalSetColor(makeVGAAttribute(LightGreen, Green))
   terminalWrite("Testing colors...\n")
@@ -107,7 +111,7 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
       terminalWriteDecimal(xp[])
       terminalWrite("\n")
 
-  terminalWrite("Freeing first malloc! We should now get it's address for this malloc\n")
+  terminalWrite("Freeing first malloc! We should now get its address for this malloc\n")
   kfree(cast[uint32](xp))
   xp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
   xp[] = 777

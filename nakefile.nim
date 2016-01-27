@@ -13,6 +13,7 @@ task "clean", "Removes build files.":
   removeFile("gdt.o")
   removeFile("crti.o")
   removeFile("crtn.o")
+  removeFile("paging.o")
   removeFile("interrupt.o")
   removeFile("mero.bin")
   removeDir("source/nimcache")
@@ -25,6 +26,7 @@ task "build", "Builds the operating system.":
 
   echo "Assembling..."
   direShell asmc, "i686-asm/boot.s -o boot.o"
+  direShell "i686-elf-as i686-asm/paging.s -o paging.o"
   direShell "i686-elf-as i686-asm/crtn.s -o crtn.o"
   direShell "i686-elf-as i686-asm/crti.s -o crti.o"
 
