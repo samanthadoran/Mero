@@ -95,29 +95,43 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
   xp[] = 777
   var xpAddr: uint32 = cast[uint32](xp)
 
-  when true:
+  when false:
     terminalWrite("Got block at: ")
     terminalWriteHex(cast[uint32](xp))
     terminalWrite(". Setting the value to: ")
     terminalWriteDecimal(xp[])
     terminalWrite("\n")
+  when false:
+    for i in 0..3:
+      var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+      xp[] = 777
+      when false:
+        terminalWrite("Got block at: ")
+        terminalWriteHex(cast[uint32](xp))
+        terminalWrite(". Setting the value to: ")
+        terminalWriteDecimal(xp[])
+        terminalWrite("\n")
 
-  for i in 0..3:
-    var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
-    xp[] = 777
-    when true:
-      terminalWrite("Got block at: ")
-      terminalWriteHex(cast[uint32](xp))
-      terminalWrite(". Setting the value to: ")
-      terminalWriteDecimal(xp[])
-      terminalWrite("\n")
+  #var yp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  #yp[] = 777
+  #kfree(cast[uint32](yp))
 
   terminalWrite("Freeing first malloc! We should now get its address for this malloc\n")
   kfree(cast[uint32](xp))
   xp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
   xp[] = 777
 
+
+  #xp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  var op = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  var tp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  var yp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+  var zp = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
+
+  kfree(cast[uint32](xp))
+
   terminalWrite("Malloc and Free tests: ")
+
   if xpAddr == cast[uint32](xp):
     terminalWrite("SUCCESS!\n")
   else:
@@ -125,7 +139,14 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
     while true:
       discard
 
-  terminalWrite("\nTesting math...\n")
+  terminalWrite("Testing merges on free...\n")
+  kfree(cast[uint32](op))
+  kfree(cast[uint32](tp))
+  kfree(cast[uint32](yp))
+  kfree(cast[uint32](zp))
+
+
+  terminalWrite("Testing math...\n")
 
   terminalWrite("Testing log2(1) should be 0: ")
   #terminalWriteDecimal(log2(1))
@@ -147,7 +168,6 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
     terminalWrite("FAILURE!\n")
 
   terminalSlowWrite("Well actually...\n", 4)
-
   #terminalWrite("Testing 0^0 should fault: ")
   #terminalWriteDecimal(pow(0, 0))
   #terminalWrite("\n")

@@ -29,6 +29,90 @@ var endmemorymanagement*: uint32
 #TODO: Implement a method to track sizes with address, array using address as
 #index with size in it?
 
+proc markAddress(address: uint32, mark: bool, order: int)
+
+
+proc getNode(address: uint32, root: ptr TreeNode, currOrder: int, lookingOrder: int): ptr TreeNode =
+  if currOrder == lookingOrder:
+    if root.value == address:
+      result = root
+    else:
+      terminalWrite("We can't get this node of order ")
+      terminalWriteDecimal(lookingOrder)
+      terminalWrite(" at address ")
+      terminalWriteHex(address)
+      terminalWrite("\n")
+      result = nil
+  else:
+    if root.value == address:
+      result = getNode(address, root.left, currOrder - 1, lookingOrder)
+
+    elif root.right.value <= address:
+      result = getNode(address, root.right, currOrder - 1, lookingOrder)
+
+    else:
+      result = getNode(address, root.left, currOrder - 1, lookingOrder)
+
+proc getNode(address: uint32, order: int): ptr TreeNode =
+  result = getNode(address, treeRoot, maxOrder, order)
+
+proc merge(node: ptr TreeNode, order: int): bool =
+  result = false
+  var iter = freeLists[order]
+
+  if iter == nil:
+    return false
+
+  #This is wrong.. but it works?
+  var xorVal = ((node.value - 0x2000) xor cast[uint32](order0size * pow(2, order)))#(cast[uint32](order0size * pow(2, order))))
+
+  if xorVal == iter.value:
+    var mergedNode: ptr TreeNode
+    if iter.value < node.value:
+      mergedNode = getNode(iter.value, order + 1)
+    else:
+      mergedNode = getNode(node.value, order + 1)
+    if mergedNode == nil:
+      return false
+
+    mergedNode.next = freeLists[order + 1]
+    freeLists[order + 1] = mergedNode
+    freeLists[order] = freeLists[order].next
+    iter.next = nil
+    node.next = nil
+    result = true
+
+    terminalWrite("Merged blocks ")
+    terminalWriteHex(node.value)
+    terminalWrite(" and ")
+    terminalWriteHex(xorVal)
+    terminalWrite("\n")
+
+  while iter.next != nil and not result:
+    var itNext = iter.next
+    if xorVal == itNext.value:
+      var mergedNode: ptr TreeNode
+      if itNext.value < node.value:
+        mergedNode = getNode(itNext.value, order + 1)
+      else:
+        mergedNode = getNode(node.value, order + 1)
+      if mergedNode == nil:
+        terminalWrite("merged node is nil, failing safely\n")
+        return false
+
+      #Put the new merged free node in the right list
+      mergedNode.next = freeLists[order + 1]
+      freeLists[order + 1] = mergedNode
+      iter.next = iter.next.next
+      itNext.next = nil
+      result = true
+      terminalWrite("Merged blocks ")
+      terminalWriteHex(node.value)
+      terminalWrite(" and ")
+      terminalWriteHex(xorVal)
+      terminalWrite("\n")
+    iter = iter.next
+
 proc markAddress(address: uint32, root: ptr TreeNode, mark: bool,
                  currOrder: int, lookingOrder: int) =
   #Mark an address as either used or unused
@@ -39,8 +123,10 @@ proc markAddress(address: uint32, root: ptr TreeNode, mark: bool,
       root.used = mark
       return
     else:
-      #We are trying to mark something that couldn't have been malloced
-      terminalWrite("Wrong address at lookingorder. Got ")
+      #We are tryifng to mark something that couldn't have been malloced
+      terminalWrite("Wrong address at order ")
+      terminalWriteDecimal(lookingOrder)
+      terminalWrite(". Got ")
       terminalWriteHex(root.value)
       terminalWrite(" but expected ")
       terminalWriteHex(address)
@@ -65,6 +151,8 @@ proc markAddress(address: uint32, mark: bool, order: int) =
 proc buildTreeFromRoot(root: ptr TreeNode, rootOrder: int) =
   #Build a tree for us to play with
   if rootOrder != 0:
+    #if false:
+    #if root.value == 0x00111000:
     root.left = cast[ptr TreeNode](buddyHeap)
     root.left.value = root.value
     root.left.used = false
@@ -73,12 +161,20 @@ proc buildTreeFromRoot(root: ptr TreeNode, rootOrder: int) =
     buddyHeap = buddyHeap + cast[uint32](sizeof(TreeNode))
 
     root.right = cast[ptr TreeNode](buddyHeap)
-    root.right.value = root.value + cast[uint32](order0size) * cast[uint32](pow(2, (rootOrder - 1)))
+    root.right.value = root.value + cast[uint32](order0size * pow(2, rootOrder - 1))
 
     root.right.used = false
     root.right.next = nil
 
     buddyHeap = buddyHeap + cast[uint32](sizeof(TreeNode))
+
+    if rootOrder == 1 and false:
+      terminalWriteHex(root.value)
+      terminalWrite(" left: ")
+      terminalWriteHex(root.left.value)
+      terminalWrite(" right: ")
+      terminalWriteHex(root.right.value)
+      terminalWrite("\n")
 
     buildTreeFromRoot(root.left, rootOrder - 1)
     buildTreeFromRoot(root.right, rootOrder - 1)
@@ -145,11 +241,8 @@ proc allocInstall*() =
 
   #Tree to keep track of frees
   treeRoot = cast[ptr TreeNode](buddyHeap)
-  treeRoot.left = nil
-  treeRoot.right = nil
   treeRoot.used = false
   treeRoot.value = endmemorymanagement
-  treeRoot.next = nil
   buddyHeap = buddyHeap + cast[uint32](sizeof(TreeNode))
 
   #Construct the tree
@@ -165,9 +258,15 @@ proc kfree(address: uint32, root: ptr TreeNode, order: int) =
   #Free the memory in the tree to put back in lists
   if root.used and root.value == address:
     #We found it, give it back to the lists!
+    #if order != 0:
+    #  terminalWrite("Not freeing order 0 block?\n")
     root.used = false
-    root.next = freeLists[order]
-    freeLists[order] = root
+
+    #Well, this is a headache
+    #TODO: Fix whatever is wrong with this awful merge code.
+    if not merge(root, order):
+      root.next = freeLists[order]
+      freeLists[order] = root
     return
   else:
     #We can't go down the tree any further and this isn't the node we need
