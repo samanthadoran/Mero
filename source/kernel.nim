@@ -52,13 +52,13 @@ proc kernel_early() {.exportc.} =
   terminalInitialize()
   terminalWrite("Initialized the terminal...\n")
 
-  #Let's enable paging
-  initPaging()
-  terminalWrite("Paging initialized...\n")
-
   #Malloc and free
   allocInstall()
   terminalWrite("Allocation systems initialized...\n")
+
+  #Let's enable paging
+  initPaging()
+  terminalWrite("Paging initialized...\n")
 
   #Some handlers..
   keyboardInstall()
@@ -94,7 +94,7 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
   xp[] = 777
   var xpAddr: uint32 = cast[uint32](xp)
 
-  when false:
+  when true:
     terminalWrite("Got block at: ")
     terminalWriteHex(cast[uint32](xp))
     terminalWrite(". Setting the value to: ")
