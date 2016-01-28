@@ -1,11 +1,11 @@
-import memory, merosystem, tty
+import memory, merosystem
 
 #These are defined in paging.s
 proc enablePaging*() {.importc: "enablePaging"}
 proc loadPageDirectory*(address: uint32) {.importc: "loadPageDirectory"}
 
 #Use pointers to arrays so that we can align, this would be easier if nim exposed
-#the align attribute.
+#gcc's align attribute.
 var pageDirectory: ptr array[1024, uint32]
 var firstPageTable: ptr array[1024, uint32]
 
@@ -24,12 +24,13 @@ proc initPaging*() =
     #Map read/write present supervisor mode pagetable
     firstPageTable[i] = cast[uint32](i * 0x1000) or 3
 
+  #Mark this address as read/write and present in the directory
   #It's super important that this be dereferenced!
-  pageDirectory[0] = cast[uint32](addr(firstPageTable[])) or 3
+  pageDirectory[0] = cast[uint32](addr(firstPageTable[0])) or 3
 
   #Move the address of the directory into CR3
   #It's super important that this be dereferenced!
-  loadPageDirectory(cast[uint32](addr(pageDirectory[])))
+  loadPageDirectory(cast[uint32](addr(pageDirectory[0])))
 
   #Set the paging bit in CR0 (bit 31)
   enablePaging()

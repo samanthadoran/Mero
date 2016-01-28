@@ -63,6 +63,7 @@ proc kernel_early() {.exportc.} =
   #Some handlers..
   keyboardInstall()
   timerInstall()
+  terminalWrite("Default handlers installed...\n")
 
   #Once we're done, we can safely enable hardware maskable interrupts
   {.emit: """
@@ -104,7 +105,7 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
   for i in 0..3:
     var xp: ptr uint32 = cast[ptr uint32](kmalloc(cast[uint32](sizeof(uint32))))
     xp[] = 777
-    when false:
+    when true:
       terminalWrite("Got block at: ")
       terminalWriteHex(cast[uint32](xp))
       terminalWrite(". Setting the value to: ")
@@ -118,9 +119,9 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
 
   terminalWrite("Malloc and Free tests: ")
   if xpAddr == cast[uint32](xp):
-    terminalWrite("SUCCESS!\n\n")
+    terminalWrite("SUCCESS!\n")
   else:
-    terminalWrite("FAILURE!\n\n")
+    terminalWrite("FAILURE!\n")
     while true:
       discard
 
@@ -145,7 +146,7 @@ proc kernel_main(pmbh: PMultiboot_header) {.exportc noReturn.} =
   else:
     terminalWrite("FAILURE!\n")
 
-  terminalSlowWrite("\nSlow it on dooooowwwwwnnnnn.....\n", 4)
+  terminalSlowWrite("Well actually...\n", 4)
 
   #terminalWrite("Testing 0^0 should fault: ")
   #terminalWriteDecimal(pow(0, 0))

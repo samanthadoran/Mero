@@ -1,20 +1,24 @@
 import tty, merosystem, math
 type
-  Node = object
-    next: ptr Node
-    address: uint32
-
   TreeNode = object
+    #For use in the free lists
+    next: ptr TreeNode
+
+    #Hold our children
     left: ptr TreeNode
     right: ptr TreeNode
+
+    #The address this node is holding
     value: uint32
+
+    #Is this specific instance being used?
     used: bool
 
 #The minimum block size is going to be 4K for now, make sure to set max Order
 const order0size = 0x1000
 const maxOrder = 5
 
-var freeLists {.noinit.}: ptr array[maxOrder + 1, ptr Node]
+var freeLists {.noinit.}: ptr array[maxOrder + 1, ptr TreeNode]
 var treeRoot: ptr TreeNode
 
 var endkernel {.importc: "end"}: uint32
@@ -64,6 +68,7 @@ proc buildTreeFromRoot(root: ptr TreeNode, rootOrder: int) =
     root.left = cast[ptr TreeNode](buddyHeap)
     root.left.value = root.value
     root.left.used = false
+    root.left.next = nil
 
     buddyHeap = buddyHeap + cast[uint32](sizeof(TreeNode))
 
@@ -71,6 +76,7 @@ proc buildTreeFromRoot(root: ptr TreeNode, rootOrder: int) =
     root.right.value = root.value + cast[uint32](order0size) * cast[uint32](pow(2, (rootOrder - 1)))
 
     root.right.used = false
+    root.right.next = nil
 
     buddyHeap = buddyHeap + cast[uint32](sizeof(TreeNode))
 
@@ -82,31 +88,22 @@ proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
 
   #We are done splitting blocks, return
   if beginningOrder == finalOrder:
-    result = freeLists[finalOrder].address
+    result = freeLists[finalOrder].value
+
+    var x = freeLists[finalOrder]
     freeLists[finalOrder] = freeLists[finalOrder].next
+    x.next = nil
   else:
-    var x, y: ptr Node
-    x = freelists[beginningOrder]
+    var x, y: ptr TreeNode
+    var initial = freeLists[beginningOrder]
+    x = initial.left
+    y = initial.right
 
-    #Give y some space!
-    y = cast[ptr Node](buddyHeap)
-    buddyHeap = buddyHeap + cast[uint32](sizeof(Node))
-
-    #Remove the block from beginningOrder
     freeLists[beginningOrder] = freeLists[beginningOrder].next
+    initial.next = nil
 
-    discard """
-    Add the size of beginningOrder to y. This math looks scary, but it is simple.
-    We need to multiply order0's size by 2^(beginningOrder - 1) so that we get
-    the proper offset. The minus one is required, otherwise we would get wrong
-    sized block addresses.
-    """
-    y.address = x.address + cast[uint32](order0size) *
-                cast[uint32](pow(2, (beginningOrder - 1)))
-
-    #Move the blocks to their new free lists
-    y.next = freeLists[beginningOrder - 1]
     x.next = y
+    y.next = freeLists[beginningOrder - 1]
     freeLists[beginningOrder - 1] = x
 
     #Recursively call until we are at the desired size.
@@ -114,8 +111,8 @@ proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
 
 proc getFreeBlock(size: uint32): uint32 =
   #Return an address to a free block
-  #Get the order based upon our order0size
 
+  #Get the order based upon our order0size
   let order = if size <= order0size: 0 else: log2(cast[int](size)) - log2(order0size)
 
   #Iterate until we have a free block to work with
@@ -131,18 +128,12 @@ proc allocInstall*() =
   buddyHeap = cast[uint32](addr(endkernel))
 
   #Init freelists object
-  freeLists = cast[ptr array[maxOrder + 1, ptr Node]](buddyHeap)
-  buddyHeap = buddyHeap + cast[uint32](sizeof(array[maxOrder + 1, ptr Node]))
+  freeLists = cast[ptr array[maxOrder + 1, ptr TreeNode]](buddyHeap)
+  buddyHeap = buddyHeap + cast[uint32](sizeof(array[maxOrder + 1, ptr TreeNode]))
 
   #Safety precaution, 0 the array
   for i in 0 .. maxOrder:
     freeLists[i] = nil
-
-  #Make sure we have some memory to start out with
-  freeLists[maxOrder] = cast[ptr Node](buddyHeap)
-
-  #Move the pointer along
-  buddyHeap = buddyHeap + cast[uint32](sizeof(Node))
 
   #Give the buddys some space!
   endmemorymanagement = buddyHeap + 0x500
@@ -152,19 +143,19 @@ proc allocInstall*() =
   while endmemorymanagement mod 4096 != 0:
     endmemorymanagement = endmemorymanagement + 1
 
-  freeLists[maxOrder].address = endmemorymanagement
-  freeLists[maxOrder].next = nil
-
   #Tree to keep track of frees
   treeRoot = cast[ptr TreeNode](buddyHeap)
   treeRoot.left = nil
   treeRoot.right = nil
   treeRoot.used = false
   treeRoot.value = endmemorymanagement
+  treeRoot.next = nil
   buddyHeap = buddyHeap + cast[uint32](sizeof(TreeNode))
 
   #Construct the tree
   buildTreeFromRoot(treeRoot, maxOrder)
+  freeLists[maxOrder] = treeRoot
+  freeLists[maxOrder].next = nil
 
 
   if freeLists[maxOrder] == nil:
@@ -175,11 +166,8 @@ proc kfree(address: uint32, root: ptr TreeNode, order: int) =
   if root.used and root.value == address:
     #We found it, give it back to the lists!
     root.used = false
-    var tmpNode: ptr Node = cast[ptr Node](buddyHeap)
-    buddyHeap = buddyHeap + cast[uint32](sizeof(Node))
-    tmpNode.address = address
-    tmpNode.next = freeLists[order]
-    freeLists[order] = tmpNode
+    root.next = freeLists[order]
+    freeLists[order] = root
     return
   else:
     #We can't go down the tree any further and this isn't the node we need
