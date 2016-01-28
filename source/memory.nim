@@ -47,21 +47,12 @@ proc markAddress(address: uint32, root: ptr TreeNode, mark: bool,
 
   if root.value == address:
     markAddress(address, root.left, mark, currOrder - 1, lookingOrder)
-    return
 
-  if root.right.value == address:
+  elif root.right.value <= address:
     markAddress(address, root.right, mark, currOrder - 1, lookingOrder)
-    return
 
-  if root.right.value <= address:
-    if root.right.left != nil:
-      if root.right.left.value <= address:
-        markAddress(address, root.right, mark, currOrder - 1, lookingOrder)
-        return
-
-  if root.left.value <= address:
-    markAddress(address, root.left, mark, currorder - 1, lookingOrder)
-    return
+  else:
+    markAddress(address, root.left, mark, currOrder - 1, lookingOrder)
 
 proc markAddress(address: uint32, mark: bool, order: int) =
   #Recursive helper function
@@ -106,8 +97,8 @@ proc makeOrderFromOrder(finalOrder: int, beginningOrder: int): uint32 =
 
     discard """
     Add the size of beginningOrder to y. This math looks scary, but it is simple.
-    We need to multiply order0's size by 2^(beginningOrder + 1) so that we get
-    the proper offset. The plus one is required, otherwise we would get wrong
+    We need to multiply order0's size by 2^(beginningOrder - 1) so that we get
+    the proper offset. The minus one is required, otherwise we would get wrong
     sized block addresses.
     """
     y.address = x.address + cast[uint32](order0size) *
@@ -126,9 +117,6 @@ proc getFreeBlock(size: uint32): uint32 =
   #Get the order based upon our order0size
 
   let order = if size <= order0size: 0 else: log2(cast[int](size)) - log2(order0size)
-
-  if order != 0:
-    terminalWrite("We requested not order 0?\n")
 
   #Iterate until we have a free block to work with
   for i in order ..  maxOrder:
@@ -202,21 +190,12 @@ proc kfree(address: uint32, root: ptr TreeNode, order: int) =
     #Navigate the tree...
     if root.value == address:
       kfree(address, root.left, order - 1)
-      return
 
-    if root.right.value == address:
+    elif root.right.value <= address:
       kfree(address, root.right, order - 1)
-      return
 
-    if root.right.value <= address:
-      if root.right.left != nil:
-        if root.right.left.value <= address:
-          kfree(address, root.right, order - 1)
-          return
-
-    if root.left.value <= address:
+    else:
       kfree(address, root.left, order - 1)
-      return
 
 proc kfree*(address: uint32) =
   #Helper function to call recursive
