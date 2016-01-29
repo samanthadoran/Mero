@@ -64,9 +64,20 @@ proc merge(node: ptr TreeNode, order: int): bool =
     return false
 
   #This is wrong.. but it works?
-  var xorVal = ((node.value - 0x2000) xor cast[uint32](order0size * pow(2, order)))#(cast[uint32](order0size * pow(2, order))))
+  #var xorVal = ((node.value - 0x2000) xor cast[uint32](order0size * pow(2, order)))#(cast[uint32](order0size * pow(2, order))))
+  var buddyVal: uint32 =
+    if ((node.value - endmemorymanagement) div order0size * cast[uint32](pow(2, order))) mod 2 == 0:
+      node.value + cast[uint32](order0size * pow(2, order))
+    else:
+      node.value - cast[uint32](order0size * pow(2, order))
 
-  if xorVal == iter.value:
+  discard """
+  terminalWrite("Buddy value is: ")
+  terminalWriteHex(buddyVal)
+  terminalWrite("\n")
+  """
+
+  if buddyVal == iter.value:
     var mergedNode: ptr TreeNode
     if iter.value < node.value:
       mergedNode = getNode(iter.value, order + 1)
@@ -82,15 +93,17 @@ proc merge(node: ptr TreeNode, order: int): bool =
     node.next = nil
     result = true
 
+    discard """
     terminalWrite("Merged blocks ")
     terminalWriteHex(node.value)
     terminalWrite(" and ")
-    terminalWriteHex(xorVal)
+    terminalWriteHex(buddyVal)
     terminalWrite("\n")
+    """
 
   while iter.next != nil and not result:
     var itNext = iter.next
-    if xorVal == itNext.value:
+    if buddyVal == itNext.value:
       var mergedNode: ptr TreeNode
       if itNext.value < node.value:
         mergedNode = getNode(itNext.value, order + 1)
@@ -106,12 +119,15 @@ proc merge(node: ptr TreeNode, order: int): bool =
       iter.next = iter.next.next
       itNext.next = nil
       result = true
+      discard """
       terminalWrite("Merged blocks ")
       terminalWriteHex(node.value)
       terminalWrite(" and ")
-      terminalWriteHex(xorVal)
+      terminalWriteHex(buddyVal)
       terminalWrite("\n")
+      """
     iter = iter.next
+  #terminalWrite("No merge!\n")
 
 proc markAddress(address: uint32, root: ptr TreeNode, mark: bool,
                  currOrder: int, lookingOrder: int) =
